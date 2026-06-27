@@ -6,6 +6,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.attribute.BedRule;
+import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.BlockGetter;
@@ -13,9 +15,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.entity.BedBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BedPart;
@@ -50,7 +50,7 @@ public class SleepingBagBlock extends BedBlock {
 
     @Override
     public @NotNull InteractionResult useWithoutItem(BlockState blockState, Level level, BlockPos blockPos, Player player, BlockHitResult blockHitResult) {
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResult.CONSUME;
         } else {
             if (blockState.getValue(PART) != BedPart.HEAD) {
@@ -61,7 +61,8 @@ public class SleepingBagBlock extends BedBlock {
                 }
             }
 
-            if (!canSetSpawn(level)) {
+            BedRule bedRule = level.environmentAttributes().getValue(EnvironmentAttributes.BED_RULE, blockPos);
+            if (bedRule.explodes()) {
                 level.removeBlock(blockPos, false);
                 BlockPos blockpos = blockPos.relative(blockState.getValue(FACING).getOpposite());
                 if (level.getBlockState(blockpos).is(this)) {
@@ -71,14 +72,13 @@ public class SleepingBagBlock extends BedBlock {
                 level.explode(null, blockPos.getX() + 0.5D, blockPos.getY() + 0.5D, blockPos.getZ() + 0.5D, 5.0F, true, Level.ExplosionInteraction.BLOCK);
                 return InteractionResult.SUCCESS;
             } else if (blockState.getValue(OCCUPIED)) {
-                player.displayClientMessage(net.minecraft.network.chat.Component.translatable("block.minecraft.bed.occupied"), true);
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("block.minecraft.bed.occupied"));
                 return InteractionResult.SUCCESS;
             } else {
                 player.startSleeping(blockPos);
-                player.setSleepingPos(player.blockPosition());  // Don't set spawn point
+                player.setSleepingPos(player.blockPosition());
                 level.setBlock(blockPos, blockState.setValue(OCCUPIED, Boolean.TRUE), 3);
                 if (player instanceof ServerPlayer) {
-                    // Register the world for time progression
                     TimeProgressionHandler.addWorld((ServerLevel) level);
                 }
                 return InteractionResult.SUCCESS;

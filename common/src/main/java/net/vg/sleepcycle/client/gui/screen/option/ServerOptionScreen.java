@@ -106,7 +106,8 @@ public class ServerOptionScreen extends OptionsSubScreen {
                 ),
                 (new OptionInstance.IntRange(0, 300)).xmap(
                         (sliderprogressvalue) ->(double)sliderprogressvalue / 100.0,
-                        (value) -> (int)(value * 100)
+                        (value) -> (int)(value * 100),
+                        true
                 ),
                 Codec.doubleRange(0.0, 3.0),
                 ModConfigs.SLEEP_TICK_MULTIPLIER,

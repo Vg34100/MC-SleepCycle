@@ -1,8 +1,9 @@
 package net.vg.sleepcycle.effect;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -15,7 +16,7 @@ public class WellRestedEffect extends MobEffect {
         super(mobEffectCategory, color);
 
 
-        ResourceLocation absorptionModifierId = ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "well_rested_absorption");
+        Identifier absorptionModifierId = Identifier.fromNamespaceAndPath(Constants.MOD_ID, "well_rested_absorption");
 
         this.addAttributeModifier(Attributes.MAX_ABSORPTION, absorptionModifierId, 4.0, AttributeModifier.Operation.ADD_VALUE);
 
@@ -33,7 +34,7 @@ public class WellRestedEffect extends MobEffect {
     }
 
     @Override
-    public boolean applyEffectTick(@NotNull LivingEntity livingEntity, int amplifier) {
+    public boolean applyEffectTick(@NotNull ServerLevel level, @NotNull LivingEntity livingEntity, int amplifier) {
         if (livingEntity.getHealth() < livingEntity.getMaxHealth()) {
             livingEntity.heal(1.0F);
         }

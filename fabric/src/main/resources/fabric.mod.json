@@ -30,6 +30,7 @@
       "net.vg.sleepcycle.data.ModDataGenerator"
     ]
   },
+  "accessWidener": "sleepcycle.accesswidener",
   "mixins": [
     "sleepcycle.mixins.json"
   ],

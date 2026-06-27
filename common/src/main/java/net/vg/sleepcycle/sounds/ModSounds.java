@@ -3,7 +3,7 @@ package net.vg.sleepcycle.sounds;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.vg.sleepcycle.Constants;
 
@@ -14,7 +14,7 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> TIRED_SOUND = registerSoundEvent("tired");
 
     private static RegistrySupplier<SoundEvent> registerSoundEvent(String name) {
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, name);
+        Identifier id = Identifier.fromNamespaceAndPath(Constants.MOD_ID, name);
         return SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(id));
     }
 

@@ -24,7 +24,7 @@ public class BedBlockMixin {
     @Inject(method = "useWithoutItem", at = @At("RETURN"))
     private void onUse(BlockState blockState, Level level, BlockPos blockPos, Player player, BlockHitResult blockHitResult, CallbackInfoReturnable<InteractionResult> cir) {
         // Check if the original method returned SUCCESS
-        if (cir.getReturnValue() == InteractionResult.SUCCESS && !level.isClientSide) {
+        if (cir.getReturnValue() == InteractionResult.SUCCESS && !level.isClientSide()) {
             // Ensure the player is sleeping and add custom logic
             if (player instanceof ServerPlayer) {
 

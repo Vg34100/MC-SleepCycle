@@ -3,8 +3,7 @@ package net.vg.sleepcycle.util;
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.event.events.common.TickEvent;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.telemetry.events.WorldLoadEvent;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -13,7 +12,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.clock.WorldClocks;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.vg.sleepcycle.Constants;
 import net.vg.sleepcycle.advancement.ModCriteria;
@@ -40,7 +40,7 @@ public class TimeProgressionHandler {
     public static void addWorld(ServerLevel world) {
         Constants.LOGGER.info("World being Added");
         if (!worldSleepTicks.containsKey(world)) {
-            originalTickSpeed = world.getGameRules().getInt(GameRules.RULE_RANDOMTICKING);
+            originalTickSpeed = world.getGameRules().get(GameRules.RANDOM_TICK_SPEED);
         }
         worldSleepTicks.putIfAbsent(world, 0);
     }
@@ -49,7 +49,7 @@ public class TimeProgressionHandler {
         worldSleepTicks.remove(world);
         // Reset the tick speed
         if (originalTickSpeed != null) {
-            world.getGameRules().getRule(GameRules.RULE_RANDOMTICKING).set(originalTickSpeed, world.getServer());
+            world.getGameRules().set(GameRules.RANDOM_TICK_SPEED, originalTickSpeed, world.getServer());
         }
     }
 
@@ -58,7 +58,7 @@ public class TimeProgressionHandler {
             List<ServerPlayer> players = world.players();
             int playerCount = players.size();
 
-            double playersRequiredToSleepRatio = world.getServer().getGameRules().getInt(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE) / 100d;
+            double playersRequiredToSleepRatio = world.getServer().getGameRules().get(GameRules.PLAYERS_SLEEPING_PERCENTAGE) / 100d;
             int playersRequiredToSleep = (int) Math.ceil(playersRequiredToSleepRatio * playerCount);
             long sleepingPlayerCount = players.stream().filter(ServerPlayer::isSleeping).count();
 
@@ -112,8 +112,8 @@ public class TimeProgressionHandler {
 
             if (sleepingPlayerCount >= playersRequiredToSleep) {
                 if (ModConfigs.CHANGE_TICK_SPEED && sleepingPlayerCount > 0) {
-                    if (originalTickSpeed != null && world.getGameRules().getInt(GameRules.RULE_RANDOMTICKING) == originalTickSpeed) {
-                        world.getGameRules().getRule(GameRules.RULE_RANDOMTICKING).set((int) (originalTickSpeed * ModConfigs.DAY_SKIP_SPEED * ModConfigs.SLEEP_TICK_MULTIPLIER), world.getServer());
+                    if (originalTickSpeed != null && originalTickSpeed.equals(world.getGameRules().get(GameRules.RANDOM_TICK_SPEED))) {
+                        world.getGameRules().set(GameRules.RANDOM_TICK_SPEED, (int) (originalTickSpeed * ModConfigs.DAY_SKIP_SPEED * ModConfigs.SLEEP_TICK_MULTIPLIER), world.getServer());
                         System.out.println("Increasing world tick speed");
                     }
                 }
@@ -121,10 +121,8 @@ public class TimeProgressionHandler {
                 int ticksAsleep = worldSleepTicks.get(world);
                 long timeIncrement = calculateTimeIncrement(ticksAsleep);
 
-                world.setDayTime(world.getDayTime() + timeIncrement); // Adjust time
-                for (int i = 0; i < timeIncrement; i++) {
-                    Minecraft.getInstance().levelRenderer.tick();
-                }
+                var overworldClock = world.registryAccess().lookupOrThrow(Registries.WORLD_CLOCK).getOrThrow(WorldClocks.OVERWORLD);
+                world.clockManager().addTicks(overworldClock, (int) timeIncrement);
 
                 if (ticksAsleep % 20 == 0) { // Tick chunks less frequently
                     tickChunks(world);
@@ -133,7 +131,7 @@ public class TimeProgressionHandler {
                 worldSleepTicks.put(world, ticksAsleep + 1); // Increment sleep ticks
             } else {
                 if (originalTickSpeed != null) {
-                    world.getGameRules().getRule(GameRules.RULE_RANDOMTICKING).set(originalTickSpeed, world.getServer());
+                    world.getGameRules().set(GameRules.RANDOM_TICK_SPEED, originalTickSpeed, world.getServer());
                 }
                 if (sleepingPlayerCount == 0) {
                     removeWorld(world);
@@ -167,7 +165,7 @@ public class TimeProgressionHandler {
     private static void onPlayerDisconnect(ServerPlayer player) {
         System.out.println("SleepCycle: on player disconnect");
 
-        for (ServerLevel world : player.server.getAllLevels()) {
+        for (ServerLevel world : player.level().getServer().getAllLevels()) {
             List<ServerPlayer> players = world.players();
             long sleepingPlayerCount = players.stream().filter(ServerPlayer::isSleeping).count();
 
@@ -180,7 +178,7 @@ public class TimeProgressionHandler {
             }
 
             if (originalTickSpeed != null) {
-                world.getGameRules().getRule(GameRules.RULE_RANDOMTICKING).set(originalTickSpeed, player.server);
+                world.getGameRules().set(GameRules.RANDOM_TICK_SPEED, originalTickSpeed, world.getServer());
                 System.out.println("Resetting world tick speed");
             }
         }

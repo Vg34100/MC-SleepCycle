@@ -1,7 +1,7 @@
 package net.vg.sleepcycle.neoforge;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.common.Mod;
 
@@ -22,7 +22,7 @@ public final class SleepCycleNeoForge {
 
         ModLoadingContext.get().registerExtensionPoint(IConfigScreenFactory.class, () -> new IConfigScreenFactory() {
             @Override
-            public Screen createScreen(Minecraft arg, Screen arg2) {
+            public Screen createScreen(ModContainer arg, Screen arg2) {
                 return new MainOptionScreen(arg2);
             }
 

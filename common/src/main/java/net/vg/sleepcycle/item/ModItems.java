@@ -2,7 +2,6 @@ package net.vg.sleepcycle.item;
 
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
-import net.minecraft.client.resources.model.Material;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.DyeColor;
@@ -25,6 +24,13 @@ public class ModItems {
 
     public static final RegistrySupplier<Item> SLEEPING_BAG_ITEM = ITEMS.register("sleeping_bag",
             () -> new SleepingBagItem(SLEEPING_BAG.get(), new Item.Properties().arch$tab(CreativeModeTabs.FUNCTIONAL_BLOCKS).stacksTo(1)));
+
+
+    public static final RegistrySupplier<Block> RANDOM_BLOCK = BLOCKS.register("block",
+            () -> new Block(BlockBehaviour.Properties.of()));
+
+    public static final RegistrySupplier<Item> RANDOM = ITEMS.register("item",
+            () -> new Item(new Item.Properties()));
 
     public static void register() {
         BLOCKS.register();
