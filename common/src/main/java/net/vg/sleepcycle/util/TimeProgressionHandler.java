@@ -54,6 +54,12 @@ public class TimeProgressionHandler {
     }
 
     private static void onWorldTick(ServerLevel world) {
+        if (!worldSleepTicks.containsKey(world)) {
+            if (world.players().stream().anyMatch(ServerPlayer::isSleeping)) {
+                addWorld(world);
+            }
+        }
+
         if (worldSleepTicks.containsKey(world)) {
             List<ServerPlayer> players = world.players();
             int playerCount = players.size();
