@@ -1,5 +1,6 @@
 package net.vg.sleepcycle.stats;
 
+import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
@@ -30,10 +31,13 @@ public class ModStats {
 
     public static void register() {
         CUSTOM_STATS.register();
+        LifecycleEvent.SETUP.register(ModStats::registerFormatters);
+    }
 
-        Stats.CUSTOM.get(TIME_SLEPT.get(), StatFormatter.TIME);
-        Stats.CUSTOM.get(WELL_RESTED_SLEEPS.get(), StatFormatter.DEFAULT);
-        Stats.CUSTOM.get(TIRED_SLEEPS.get(), StatFormatter.DEFAULT);
-        Stats.CUSTOM.get(HEALTH_REGAINED.get(), StatFormatter.DEFAULT);
+    private static void registerFormatters() {
+        Stats.CUSTOM.get(TIME_SLEPT.value(), StatFormatter.TIME);
+        Stats.CUSTOM.get(WELL_RESTED_SLEEPS.value(), StatFormatter.DEFAULT);
+        Stats.CUSTOM.get(TIRED_SLEEPS.value(), StatFormatter.DEFAULT);
+        Stats.CUSTOM.get(HEALTH_REGAINED.value(), StatFormatter.DEFAULT);
     }
 }

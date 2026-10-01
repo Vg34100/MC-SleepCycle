@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "iii"
+  ],
+  "key": {
+    "i": "minecraft:light_gray_wool"
+  },
+  "result": {
+    "count": 1,
+    "id": "sleepcycle:sleeping_bag_light_gray"
+  }
+}

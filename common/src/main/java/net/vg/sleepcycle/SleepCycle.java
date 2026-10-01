@@ -7,6 +7,7 @@ import net.vg.sleepcycle.effect.ModEffects;
 import net.vg.sleepcycle.item.ModItems;
 import net.vg.sleepcycle.sounds.ModSounds;
 import net.vg.sleepcycle.stats.ModStats;
+import net.vg.sleepcycle.network.ModNetwork;
 import net.vg.sleepcycle.util.TimeProgressionHandler;
 
 public final class SleepCycle {
@@ -32,5 +33,8 @@ public final class SleepCycle {
 
         // handler
         TimeProgressionHandler.register();
+
+        // network
+        ModNetwork.registerCommon();
     }
 }

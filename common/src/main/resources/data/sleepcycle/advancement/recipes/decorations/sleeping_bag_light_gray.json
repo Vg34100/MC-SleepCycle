@@ -3,15 +3,15 @@
   "criteria": {
     "has_the_recipe": {
       "conditions": {
-        "recipe": "sleepcycle:sleeping_bag"
+        "recipe": "sleepcycle:sleeping_bag_light_gray"
       },
       "trigger": "minecraft:recipe_unlocked"
     },
-    "has_white_wool": {
+    "has_light_gray_wool": {
       "conditions": {
         "items": [
           {
-            "items": "minecraft:white_wool"
+            "items": "minecraft:light_gray_wool"
           }
         ]
       },
@@ -21,12 +21,12 @@
   "requirements": [
     [
       "has_the_recipe",
-      "has_white_wool"
+      "has_light_gray_wool"
     ]
   ],
   "rewards": {
     "recipes": [
-      "sleepcycle:sleeping_bag"
+      "sleepcycle:sleeping_bag_light_gray"
     ]
   }
 }

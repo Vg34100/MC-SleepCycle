@@ -11,6 +11,7 @@
     "BedBlockMixin",
     "MinecraftServerMixin",
     "PlayerTickMixin",
+    "ServerPlayerSleepMixin",
     "SleepStatusMixin"
   ],
   "injectors": {

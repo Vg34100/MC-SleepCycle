@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "sleepcycle:sleeping_bag_gray"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    },
+    "has_gray_wool": {
+      "conditions": {
+        "items": [
+          {
+            "items": "minecraft:gray_wool"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_gray_wool"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "sleepcycle:sleeping_bag_gray"
+    ]
+  }
+}

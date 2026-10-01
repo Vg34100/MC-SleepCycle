@@ -28,6 +28,7 @@ public class TimeProgressionHandler {
     private static final Map<ServerLevel, Integer> worldSleepTicks = new HashMap<>();
     private static final Map<ServerPlayer, Integer> playerSleepTicks = new HashMap<>();
     private static final Set<ServerPlayer> sleepingPlayers = new HashSet<>();
+    private static final Map<UUID, Long> playerWakeTargets = new HashMap<>();
     private static Integer originalTickSpeed = null;
     private static final int SLEEP_ADVANCEMENT_DURATION = 6000; // 5 minutes in ticks (20 ticks * 60 seconds * 5 minutes) = 6000
 
@@ -43,6 +44,16 @@ public class TimeProgressionHandler {
             originalTickSpeed = world.getGameRules().get(GameRules.RANDOM_TICK_SPEED);
         }
         worldSleepTicks.putIfAbsent(world, 0);
+    }
+
+    public static void setWakeTarget(ServerPlayer player, long targetDayTime) {
+        var overworldClock = player.level().registryAccess()
+            .lookupOrThrow(Registries.WORLD_CLOCK).getOrThrow(WorldClocks.OVERWORLD);
+        long totalTicks = player.level().clockManager().getTotalTicks(overworldClock);
+        long currentDayTime = totalTicks % 24000;
+        long ticksUntilTarget = (targetDayTime - currentDayTime + 24000) % 24000;
+        if (ticksUntilTarget == 0) ticksUntilTarget = 24000;
+        playerWakeTargets.put(player.getUUID(), totalTicks + ticksUntilTarget);
     }
 
     public static void removeWorld(ServerLevel world) {
@@ -103,6 +114,16 @@ public class TimeProgressionHandler {
                     playerSleepTicks.put(player, playerTicksAsleep + 1); // Increment player sleep ticks
                     player.awardStat(ModStats.TIME_SLEPT.value(), 1);
 
+                    // Wake player when their chosen target time is reached
+                    if (playerWakeTargets.containsKey(player.getUUID())) {
+                        var wakeOverworldClock = world.registryAccess().lookupOrThrow(Registries.WORLD_CLOCK).getOrThrow(WorldClocks.OVERWORLD);
+                        long currentTotalTicks = world.clockManager().getTotalTicks(wakeOverworldClock);
+                        if (currentTotalTicks >= playerWakeTargets.get(player.getUUID())) {
+                            player.stopSleepInBed(false, true);
+                            playerWakeTargets.remove(player.getUUID());
+                        }
+                    }
+
                 } else {
                     // Reset player's sleep ticks if they are not sleeping
                     if (player.hasEffect(ModEffects.getWellRestedHolder())) {
@@ -113,6 +134,7 @@ public class TimeProgressionHandler {
                     }
                     playerSleepTicks.remove(player);
                     sleepingPlayers.remove(player);
+                    playerWakeTargets.remove(player.getUUID());
                 }
             }
 
@@ -178,6 +200,7 @@ public class TimeProgressionHandler {
             if (sleepingPlayers.contains(player)) {
                 playerSleepTicks.remove(player);
                 sleepingPlayers.remove(player);
+                playerWakeTargets.remove(player.getUUID());
 
                 removeWorld(world);
                 System.out.println("Removing the World");
