@@ -1,6 +1,6 @@
 # Sleep Cycle
 
-Sleep Cycle 1.0.4 makes time pass progressively while players sleep. The existing
+Sleep Cycle 1.0.5 makes time pass progressively while players sleep. The existing
 sleep duration, healing, effects, advancements, statistics and resources are
 preserved across a Stonecutter 0.9.7 matrix.
 
@@ -15,7 +15,7 @@ Architectury API is required on both loaders. Fabric also requires Fabric API.
 Mod Menu is optional on Fabric and provides access to the config screen;
 NeoForge uses its native mod config-screen integration. Choose the JAR matching
 both your Minecraft version and loader, with the matching dependency versions.
-This conversion does not publish new downloads or change the release version.
+See the [1.0.5 release notes](docs/wiki/release-notes.md).
 
 ## Features
 
@@ -27,7 +27,7 @@ This conversion does not publish new downloads or change the release version.
   without setting a respawn point.
 - Multiplayer sleeping-percentage control and server handling of wake requests.
 
-The config file is `config/sleepcycleconfig-1.0.4.properties`. Config screens edit
+The config file is `config/sleepcycleconfig-1.0.5.properties`. Config screens edit
 local values; server configuration is not automatically synchronized to clients.
 
 ## Development and validation

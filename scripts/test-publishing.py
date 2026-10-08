@@ -76,7 +76,9 @@ class PublishingSafety(unittest.TestCase):
             shutil.copyfile(ROOT / 'gradle.properties', root / 'gradle.properties')
             for loader in ('fabric', 'neoforge'):
                 shutil.copytree(ROOT / loader / 'src/main/resources', root / loader / 'src/main/resources')
-            shutil.copyfile(ROOT / 'gradle/publishing.properties', root / 'gradle/publishing.properties')
+            config = PUBLISH['properties'](ROOT / 'gradle/publishing.properties')
+            config.update(modrinth_project_id='synthetic-mr-id', curseforge_project_id='123456')
+            (root / 'gradle/publishing.properties').write_text(''.join(f'{k}={v}\n' for k, v in config.items()))
             notes = root / 'docs/wiki/release-notes.md'
             notes.parent.mkdir(parents=True)
             version = WRAPPER['read_properties'](root / 'gradle.properties')['mod_version']
@@ -86,12 +88,12 @@ class PublishingSafety(unittest.TestCase):
         self.assertEqual({r["target"] for r in data["entries"]}, {p.stem for p in (ROOT / 'gradle/matrix').glob('*.properties')})
         self.assertEqual(len({r['version_number'] for r in data['entries']}), len(data['entries']))
         self.assertEqual(len(data['entries']), 12)
-        self.assertEqual(data['project_id'], '')
-        self.assertEqual(data['curseforge_project_id'], '')
+        self.assertEqual(data['project_id'], 'synthetic-mr-id')
+        self.assertEqual(data['curseforge_project_id'], '123456')
         self.assertEqual(data['modrinth_environments'], dict(client_side='required', server_side='required'))
         for row in data['entries']:
             loader = {'fabric': 'Fabric', 'neoforge': 'NeoForge'}[row['loader']]
-            self.assertEqual(row['version_name'], f"[{loader}] Sleep Cycle {data['mod_version']} ({row['minecraft']})")
+            self.assertEqual(row['version_name'], f"[{loader}] SleepCycle {data['mod_version']} ({row['minecraft']})")
             self.assertEqual(row['version_number'], f"{data['mod_version']}-{row['minecraft']}-{row['loader']}")
             self.assertEqual(row['artifact'], f"build/libs/{row['target']}/sleepcycle-{row['loader']}-{row['minecraft']}-{data['mod_version']}.jar")
             mods = {d['mod_id'] for d in row['dependencies']}

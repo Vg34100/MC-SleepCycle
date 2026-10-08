@@ -1,4 +1,29 @@
-# SleepCycle conversion acceptance
+# SleepCycle release and conversion acceptance
+
+## Release 1.0.5
+
+The release changes version/publication metadata and documentation only. It keeps
+all application source, dependency pins, registry identities and compatibility
+mechanisms from conversion commit `06a45d0a05027461921c67c5173ad0f1f6c0e755`.
+
+The single final `publish:preflight` passed: twelve 1.0.5 installable JARs,
+twelve artifact checks, four representative packaged-client smokes, and both
+platform dry-runs. The collection selects exactly twelve GitHub JAR assets.
+All twenty publishing safety tests passed with synthetic publication facts.
+The five dedicated-server conversion probes below are reused because no server
+source, dependency or compatibility behavior changed. Player gameplay checks
+remain pending; no new gameplay validation is claimed.
+
+Publication facts are owned by `gradle/publishing.properties`: Modrinth
+`NIRflwRc` / `sleepcycle`, CurseForge `1061863` / `sleepcycle`, and canonical
+GitHub repository `Vg34100/MC-SleepCycle`. Both client and server sides are
+required. Uploads use target-qualified version numbers, exact-artifact SHA-256
+checks, semantic duplicate guards and API receipt-backed sequential publishing.
+Older 1.0.4 public files are retained. Local old JARs were moved into an ignored
+archive so release selection contains exactly one 1.0.5 JAR for each target.
+Upload receipts, manifests, smoke logs and temporary worlds remain untracked.
+
+## Conversion 1.0.4 baseline evidence
 
 Baseline: Minecraft 26.1.2, mod 1.0.4, Fabric and NeoForge at `f5a4c87` on
 `feature/26.1.2-migration`. Current target facts live in `gradle/matrix/`.
@@ -77,9 +102,10 @@ registry/data compatibility and save writes, not player sleep gameplay or a
 full world reopen. Evidence stays in ignored `build/server-smoke/` JSON/logs;
 probe worlds and validation datapacks stay under ignored `runs/`.
 
-The seeded publishing helpers' twenty unit tests also pass with synthetic
-publication facts; they make no external requests. No publication preflight,
-upload, tag or public release was performed. Mod version remains 1.0.4.
+At conversion acceptance, the twenty publishing safety tests passed with
+synthetic publication facts and no external requests. That conversion performed
+no publication and retained mod version 1.0.4; the separate release evidence
+appears above.
 
 ## Manual player regression checklist
 

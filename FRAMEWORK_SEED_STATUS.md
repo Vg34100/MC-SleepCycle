@@ -18,9 +18,13 @@ Acceptance evidence and the remaining manual gameplay checklist live in
 [testing.md](docs/development/testing.md). Compatibility decisions live in
 [sleepcycle-compatibility.md](docs/development/sleepcycle-compatibility.md).
 
-This task is conversion only. Mod version remains **1.0.4**. Project IDs,
-CurseForge slug and release notes are deliberately unset for a later publication
-stage; no tags, releases, uploads or public platform changes are authorized here.
+The completed conversion remains the source/compatibility baseline. Release
+configuration now targets **1.0.5**, Modrinth `NIRflwRc` / `sleepcycle` and
+CurseForge `1061863` / `sleepcycle`, with both client/server sides required.
+Project ownership/source links and all dependency mappings were audited before
+publication. The canonical GitHub repository is `Vg34100/MC-SleepCycle`; the
+older configured remote resolves there. User-facing notes live under
+`docs/wiki/release-notes.md`. Existing 1.0.4 public files are retained.
 
 Reusable template corrections to carry back: publishing environment/side checks
 must support both-side mods while retaining single-side plans, and test fixtures

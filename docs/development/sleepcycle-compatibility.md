@@ -84,11 +84,14 @@ Architectury API, without the old common-module transform/shadow packaging.
 
 ## Publication boundary
 
-This conversion keeps mod version 1.0.4. It creates no public files, tags or
-releases. Public project IDs, the CurseForge slug and release notes are deliberately
-unset until a separately authorized publication audit. The prepared helpers use
-both client/server metadata and only actual required/optional dependencies. Their
-unit tests use synthetic publication facts and no external requests.
+The conversion commit keeps mod version 1.0.4. The separately authorized 1.0.5
+release changes version/publication facts and documentation, retaining all source,
+registry IDs, dependency pins and loader compatibility decisions. Public project
+IDs, display-name convention and source links are verified before upload.
+The publisher uses both client/server metadata and only actual required/optional
+dependencies. Its twenty unit tests use synthetic facts and no external requests.
+The five conversion server probes remain accepted for this metadata-only release;
+player gameplay remains on the manual checklist.
 
 ## Validation
 
