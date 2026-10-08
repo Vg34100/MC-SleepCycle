@@ -3,8 +3,11 @@ package net.vg.sleepcycle.advancement;
 
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
-import net.minecraft.advancements.CriteriaTriggers;
+//? if >=26.2 {
+/*import net.minecraft.advancements.triggers.CriterionTrigger;
+*///? } else {
 import net.minecraft.advancements.CriterionTrigger;
+//? }
 import net.minecraft.core.registries.Registries;
 import net.vg.sleepcycle.Constants;
 

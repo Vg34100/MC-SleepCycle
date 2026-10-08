@@ -106,8 +106,10 @@ public class ServerOptionScreen extends OptionsSubScreen {
                 ),
                 (new OptionInstance.IntRange(0, 300)).xmap(
                         (sliderprogressvalue) ->(double)sliderprogressvalue / 100.0,
-                        (value) -> (int)(value * 100),
-                        true
+                        (value) -> (int)(value * 100)
+                        //? if >=26.1 {
+                        , true
+                        //? }
                 ),
                 Codec.doubleRange(0.0, 3.0),
                 ModConfigs.SLEEP_TICK_MULTIPLIER,
@@ -133,7 +135,11 @@ public class ServerOptionScreen extends OptionsSubScreen {
     @Override
     public void onClose() {
         ModConfigs.saveConfigs();
+        //? if >=26.2 {
+        /*this.minecraft.gui.setScreen(this.lastScreen);
+        *///? } else {
         this.minecraft.setScreen(this.lastScreen);
+        //? }
     }
 
     private static Component getGenericValueText(Component prefix, Component value) {

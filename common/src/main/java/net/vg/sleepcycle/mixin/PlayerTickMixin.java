@@ -1,3 +1,4 @@
+//? if >=26.1 {
 package net.vg.sleepcycle.mixin;
 
 import net.minecraft.world.attribute.BedRule;
@@ -24,3 +25,4 @@ public abstract class PlayerTickMixin {
         return bedRule.canSleep(level);
     }
 }
+//? }

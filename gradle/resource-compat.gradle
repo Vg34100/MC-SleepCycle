@@ -1,0 +1,41 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+// Keep canonical 26.x resources. Only serialized 1.21 ingredient/item formats
+// differ; do not carry stale datagen output into the installable JAR.
+def legacyResources = stonecutter.eval(stonecutter.current.version, '<26.1')
+def fabricResources = project.name.endsWith('-fabric')
+tasks.named('processResources') {
+    if (fabricResources || !(stonecutter.eval(stonecutter.current.version, '>=26.1') && stonecutter.eval(stonecutter.current.version, '<26.1.2'))) {
+        exclude 'sleepcycle.early-neoforge.mixins.json'
+    }
+    if (legacyResources) exclude 'assets/sleepcycle/items/**'
+    if (legacyResources || !fabricResources) exclude 'sleepcycle.accesswidener'
+    doLast {
+        if (!legacyResources) return
+        def mixinFile = new File(destinationDir, 'sleepcycle.mixins.json')
+        def mixins = new JsonSlurper().parse(mixinFile)
+        ['PlayerTickMixin', 'ServerPlayerSleepMixin'].each { name ->
+            if (!mixins.mixins.remove(name)) throw new GradleException("Missing modern-only mixin: ${name}")
+        }
+        mixinFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(mixins)) + '\n'
+        if (fabricResources) {
+            def file = new File(destinationDir, 'fabric.mod.json')
+            def data = new JsonSlurper().parse(file)
+            if (data.remove('accessWidener') != 'sleepcycle.accesswidener') {
+                throw new GradleException('Expected canonical constructor access widener')
+            }
+            data.entrypoints.main.add('net.vg.sleepcycle.fabric.util.LegacyDaySleep')
+            file.text = JsonOutput.prettyPrint(JsonOutput.toJson(data)) + '\n'
+        }
+        fileTree(new File(destinationDir, 'data/sleepcycle/recipe')).matching { include '*.json' }.each { file ->
+            def recipe = new JsonSlurper().parse(file)
+            if (recipe.type != 'minecraft:crafting_shaped') throw new GradleException("Unexpected recipe: ${file}")
+            recipe.key = recipe.key.collectEntries { key, value ->
+                if (!(value instanceof String)) throw new GradleException("Expected canonical string ingredient: ${file}")
+                [(key): value.startsWith('#') ? [tag: value.substring(1)] : [item: value]]
+            }
+            file.text = JsonOutput.prettyPrint(JsonOutput.toJson(recipe)) + '\n'
+        }
+    }
+}

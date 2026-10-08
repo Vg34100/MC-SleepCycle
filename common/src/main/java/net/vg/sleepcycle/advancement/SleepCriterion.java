@@ -2,10 +2,17 @@ package net.vg.sleepcycle.advancement;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
-import net.minecraft.advancements.Criterion;
 import net.minecraft.advancements.CriterionTriggerInstance;
+//? if >=26.2 {
+/*import net.minecraft.advancements.predicates.ContextAwarePredicate;
+import net.minecraft.advancements.triggers.SimpleCriterionTrigger;
+*///? } elif >=26.1 {
 import net.minecraft.advancements.criterion.ContextAwarePredicate;
 import net.minecraft.advancements.criterion.SimpleCriterionTrigger;
+//? } else {
+/*import net.minecraft.advancements.critereon.ContextAwarePredicate;
+import net.minecraft.advancements.critereon.SimpleCriterionTrigger;
+*///? }
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.vg.sleepcycle.Constants;

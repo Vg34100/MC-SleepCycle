@@ -5,7 +5,7 @@ import com.terraformersmc.modmenu.api.ModMenuApi;
 import net.vg.sleepcycle.Constants;
 import net.vg.sleepcycle.client.gui.screen.option.MainOptionScreen;
 
-public class StructureVoidableModMenu implements ModMenuApi {
+public class SleepCycleModMenu implements ModMenuApi {
 
     @Override
     public ConfigScreenFactory<?> getModConfigScreenFactory() {

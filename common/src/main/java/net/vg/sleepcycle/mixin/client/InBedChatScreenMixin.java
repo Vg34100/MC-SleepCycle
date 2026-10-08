@@ -9,8 +9,10 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+//? if >=26.1 {
 import net.minecraft.world.clock.WorldClock;
 import net.minecraft.world.clock.WorldClocks;
+//? }
 import net.vg.sleepcycle.config.ModConfigs;
 import net.vg.sleepcycle.network.WakeAtPacket;
 import org.spongepowered.asm.mixin.Mixin;
@@ -64,6 +66,7 @@ public abstract class InBedChatScreenMixin extends Screen {
 
     @Unique
     private long sleepcycle$getDayTime(Minecraft mc) {
+        //? if >=26.1 {
         try {
             Holder<WorldClock> clock = mc.level.registryAccess()
                 .lookupOrThrow(Registries.WORLD_CLOCK).getOrThrow(WorldClocks.OVERWORLD);
@@ -71,6 +74,9 @@ public abstract class InBedChatScreenMixin extends Screen {
         } catch (Exception e) {
             return 0;
         }
+        //? } else {
+        /*return mc.level.getDayTime() % 24000;
+        *///? }
     }
 
     @Unique

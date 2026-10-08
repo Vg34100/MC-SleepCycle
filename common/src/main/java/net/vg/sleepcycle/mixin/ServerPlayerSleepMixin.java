@@ -1,3 +1,4 @@
+//? if >=26.1 {
 package net.vg.sleepcycle.mixin;
 
 import net.minecraft.server.level.ServerPlayer;
@@ -24,3 +25,4 @@ public abstract class ServerPlayerSleepMixin {
         return bedRule.canSleep(level);
     }
 }
+//? }

@@ -3,7 +3,11 @@ package net.vg.sleepcycle.mixin;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+//? if >=26.1 {
 import net.minecraft.world.level.gamerules.GameRules;
+//? } else {
+/*import net.minecraft.world.level.GameRules;
+*///? }
 import net.vg.sleepcycle.config.ModConfigs;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -42,7 +46,11 @@ public abstract class MinecraftServerMixin {
             List<ServerPlayer> players = level.players();
             if (players.isEmpty()) continue;
 
+            //? if >=26.1 {
             int percentageRequired = level.getGameRules().get(GameRules.PLAYERS_SLEEPING_PERCENTAGE);
+            //? } else {
+            /*int percentageRequired = level.getGameRules().getInt(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE);
+            *///? }
 
             int sleepingCount = (int) players.stream().filter(ServerPlayer::isSleeping).count();
             if (sleepingCount > 0 && sleepingCount >= (players.size() * percentageRequired / 100)) {

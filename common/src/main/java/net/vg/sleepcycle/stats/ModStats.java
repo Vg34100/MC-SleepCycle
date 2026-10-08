@@ -35,9 +35,9 @@ public class ModStats {
     }
 
     private static void registerFormatters() {
-        Stats.CUSTOM.get(TIME_SLEPT.value(), StatFormatter.TIME);
-        Stats.CUSTOM.get(WELL_RESTED_SLEEPS.value(), StatFormatter.DEFAULT);
-        Stats.CUSTOM.get(TIRED_SLEEPS.value(), StatFormatter.DEFAULT);
-        Stats.CUSTOM.get(HEALTH_REGAINED.value(), StatFormatter.DEFAULT);
+        Stats.CUSTOM.get(TIME_SLEPT.get(), StatFormatter.TIME);
+        Stats.CUSTOM.get(WELL_RESTED_SLEEPS.get(), StatFormatter.DEFAULT);
+        Stats.CUSTOM.get(TIRED_SLEEPS.get(), StatFormatter.DEFAULT);
+        Stats.CUSTOM.get(HEALTH_REGAINED.get(), StatFormatter.DEFAULT);
     }
 }

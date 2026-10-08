@@ -34,7 +34,11 @@ public class WellRestedEffect extends MobEffect {
     }
 
     @Override
+    //? if >=26.1 {
     public boolean applyEffectTick(@NotNull ServerLevel level, @NotNull LivingEntity livingEntity, int amplifier) {
+    //? } else {
+    /*public boolean applyEffectTick(@NotNull LivingEntity livingEntity, int amplifier) {
+    *///? }
         if (livingEntity.getHealth() < livingEntity.getMaxHealth()) {
             livingEntity.heal(1.0F);
         }

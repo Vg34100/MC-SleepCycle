@@ -6,13 +6,16 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+//? if >=26.1 {
 import net.minecraft.world.attribute.BedRule;
 import net.minecraft.world.attribute.EnvironmentAttributes;
+//? }
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -29,7 +32,7 @@ import net.vg.sleepcycle.block.entity.SleepingBagBlockEntity;
 import net.vg.sleepcycle.util.TimeProgressionHandler;
 import org.jetbrains.annotations.NotNull;
 
-public class SleepingBagBlock extends BedBlock {
+public class SleepingBagBlock extends BedBlock implements EntityBlock {
     public static final EnumProperty<BedPart> PART = BlockStateProperties.BED_PART;
     protected static final VoxelShape SHAPE = Block.box(0.0D, 0.0D, 0.0D, 16.0D, 3.0D, 16.0D);
 
@@ -51,7 +54,11 @@ public class SleepingBagBlock extends BedBlock {
     @Override
     public @NotNull InteractionResult useWithoutItem(BlockState blockState, Level level, BlockPos blockPos, Player player, BlockHitResult blockHitResult) {
         if (level.isClientSide()) {
+            //? if >=26.1 {
             return InteractionResult.SUCCESS_SERVER;
+            //? } else {
+            /*return InteractionResult.CONSUME;
+            *///? }
         } else {
             if (blockState.getValue(PART) != BedPart.HEAD) {
                 blockPos = blockPos.relative(blockState.getValue(FACING));
@@ -61,8 +68,12 @@ public class SleepingBagBlock extends BedBlock {
                 }
             }
 
+            //? if >=26.1 {
             BedRule bedRule = level.environmentAttributes().getValue(EnvironmentAttributes.BED_RULE, blockPos);
             if (bedRule.explodes()) {
+            //? } else {
+            /*if (!BedBlock.canSetSpawn(level)) {
+            *///? }
                 level.removeBlock(blockPos, false);
                 BlockPos blockpos = blockPos.relative(blockState.getValue(FACING).getOpposite());
                 if (level.getBlockState(blockpos).is(this)) {

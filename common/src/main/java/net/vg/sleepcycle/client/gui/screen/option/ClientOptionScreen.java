@@ -48,7 +48,11 @@ public class ClientOptionScreen extends OptionsSubScreen {
     @Override
     public void onClose() {
         ModConfigs.saveConfigs();
+        //? if >=26.2 {
+        /*this.minecraft.gui.setScreen(this.lastScreen);
+        *///? } else {
         this.minecraft.setScreen(this.lastScreen);
+        //? }
     }
 
     private static Component getGenericValueText(Component prefix, Component value) {
