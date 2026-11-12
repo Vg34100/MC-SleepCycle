@@ -16,15 +16,21 @@ public class WellRestedEffect extends MobEffect {
         super(mobEffectCategory, color);
 
 
-        Identifier absorptionModifierId = Identifier.fromNamespaceAndPath(Constants.MOD_ID, "well_rested_absorption");
+        Identifier absorptionModifierId = net.vg.sleepcycle.util.ModIds.id("well_rested_absorption");
 
+        //? if >=1.21 {
         this.addAttributeModifier(Attributes.MAX_ABSORPTION, absorptionModifierId, 4.0, AttributeModifier.Operation.ADD_VALUE);
+        //? }
 
     }
 
 
     @Override
+    //? if >=1.21 {
     public boolean shouldApplyEffectTickThisTick(int i, int j) {
+    //? } else {
+    /*public boolean isDurationEffectTick(int i, int j) {
+    *///? }
         int k = 50 >> j;
         if (k > 0) {
             return i % k == 0;
@@ -36,19 +42,37 @@ public class WellRestedEffect extends MobEffect {
     @Override
     //? if >=26.1 {
     public boolean applyEffectTick(@NotNull ServerLevel level, @NotNull LivingEntity livingEntity, int amplifier) {
-    //? } else {
+    //? } elif >=1.21 {
     /*public boolean applyEffectTick(@NotNull LivingEntity livingEntity, int amplifier) {
+    *///? } else {
+    /*public void applyEffectTick(@NotNull LivingEntity livingEntity, int amplifier) {
     *///? }
         if (livingEntity.getHealth() < livingEntity.getMaxHealth()) {
             livingEntity.heal(1.0F);
         }
 
+        //? if >=1.21 {
         return true;
+        //? }
     }
 
+    //? if >=1.21 {
     @Override
     public void onEffectStarted(LivingEntity livingEntity, int i) {
         super.onEffectStarted(livingEntity, i);
         livingEntity.setAbsorptionAmount(Math.max(livingEntity.getAbsorptionAmount(), (float)(4 * (1 + i))));
     }
+    //? } else {
+    /*@Override
+    public void addAttributeModifiers(LivingEntity entity, net.minecraft.world.entity.ai.attributes.AttributeMap attributes, int amplifier) {
+        super.addAttributeModifiers(entity, attributes, amplifier);
+        entity.setAbsorptionAmount(Math.max(entity.getAbsorptionAmount(), 4.0F * (1 + amplifier)));
+    }
+
+    @Override
+    public void removeAttributeModifiers(LivingEntity entity, net.minecraft.world.entity.ai.attributes.AttributeMap attributes, int amplifier) {
+        super.removeAttributeModifiers(entity, attributes, amplifier);
+        entity.setAbsorptionAmount(Math.max(0.0F, entity.getAbsorptionAmount() - 4.0F * (1 + amplifier)));
+    }
+    *///? }
 }

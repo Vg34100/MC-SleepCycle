@@ -175,7 +175,11 @@ public class TimeProgressionHandler {
     private static long dayTicks(Level world) {
         //? if >=26.1 {
         var clock = world.registryAccess().lookupOrThrow(Registries.WORLD_CLOCK).getOrThrow(WorldClocks.OVERWORLD);
+        //? if >=26.3 {
+        /*return world.clockManager().getInstance(clock).totalTicks();
+        *///? } else {
         return world.clockManager().getTotalTicks(clock);
+        //? }
         //? } else {
         /*return world.getDayTime();
         *///? }

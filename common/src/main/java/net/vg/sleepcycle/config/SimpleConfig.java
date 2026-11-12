@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -99,20 +100,21 @@ public class SimpleConfig {
     }
 
     private void loadConfig() throws IOException {
-        Scanner reader = new Scanner(request.file);
-        StringBuilder currentComment = new StringBuilder();
-        for (int line = 1; reader.hasNextLine(); line++) {
-            currentComment = parseConfigEntry(reader.nextLine(), line, currentComment);
+        try (Scanner reader = new Scanner(request.file, StandardCharsets.UTF_8)) {
+            StringBuilder currentComment = new StringBuilder();
+            for (int line = 1; reader.hasNextLine(); line++) {
+                currentComment = parseConfigEntry(reader.nextLine(), line, currentComment, config);
+            }
         }
     }
 
-    private StringBuilder parseConfigEntry(String entry, int line, StringBuilder currentComment) {
+    private StringBuilder parseConfigEntry(String entry, int line, StringBuilder currentComment, Map<String, ConfigEntry> entries) {
         if (entry.startsWith("#")) {
             currentComment.append(entry).append("\n");
         } else if (!entry.isEmpty()) {
             String[] parts = entry.split("=", 2);
             if (parts.length == 2) {
-                config.put(parts[0], new ConfigEntry(parts[1].split(" #")[0], currentComment.toString()));
+                entries.put(parts[0], new ConfigEntry(parts[1].split(" #")[0], currentComment.toString()));
                 currentComment.setLength(0);  // clear the currentComment
             } else {
                 throw new RuntimeException("Syntax error in config file on line " + line + "!");
@@ -233,24 +235,17 @@ public class SimpleConfig {
 
     public void save() {
         try {
-            boolean needsRecreation = false;
-
-            // List of all necessary config keys
-
-            String[] necessaryConfigs = ModConfigs.necessaryConfigs;
-
-            // Check if all necessary configs are present
-            for (String key : necessaryConfigs) {
-                if (!config.containsKey(key)) {
-                    needsRecreation = true;
-                    break;
+            // Provider declarations own required keys. Fill gaps without discarding
+            // existing values, comments or unknown keys from older user files.
+            Map<String, ConfigEntry> defaults = new LinkedHashMap<>();
+            try (Scanner reader = new Scanner(request.getConfig())) {
+                StringBuilder comment = new StringBuilder();
+                for (int line = 1; reader.hasNextLine(); line++) {
+                    comment = parseConfigEntry(reader.nextLine(), line, comment, defaults);
                 }
             }
-
-            if (needsRecreation) {
-                createConfig();
-                loadConfig();
-            } else {
+            defaults.forEach(config::putIfAbsent);
+            {
                 PrintWriter writer = new PrintWriter(request.file, "UTF-8");
                 for (Map.Entry<String, ConfigEntry> entry : config.entrySet()) {
                     if (entry.getValue() != null && !entry.getValue().comment.isEmpty()) {

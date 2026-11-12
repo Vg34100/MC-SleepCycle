@@ -1,6 +1,6 @@
 # Sleep Cycle
 
-Sleep Cycle 1.0.5 makes time pass progressively while players sleep. The existing
+Sleep Cycle 1.0.6 makes time pass progressively while players sleep. The existing
 sleep duration, healing, effects, advancements, statistics and resources are
 preserved across a Stonecutter 0.9.7 matrix.
 
@@ -8,14 +8,17 @@ preserved across a Stonecutter 0.9.7 matrix.
 
 | Minecraft | Loaders | Java |
 | --- | --- | --- |
+| 1.20.1 | Fabric, Forge | 17 |
 | 1.21, 1.21.1 | Fabric, NeoForge | 21 |
-| 26.1, 26.1.1, 26.1.2, 26.2 | Fabric, NeoForge | 25 |
+| 26.1, 26.1.1, 26.1.2, 26.2, 26.3 | Fabric, NeoForge | 25 |
 
-Architectury API is required on both loaders. Fabric also requires Fabric API.
+The release matrix has 16 targets, including 1.20.1 and 26.3.
+
+Architectury API is required on all loaders. Fabric also requires Fabric API.
 Mod Menu is optional on Fabric and provides access to the config screen;
-NeoForge uses its native mod config-screen integration. Choose the JAR matching
+Forge and NeoForge use their native mod config-screen integration. Choose the JAR matching
 both your Minecraft version and loader, with the matching dependency versions.
-See the [1.0.5 release notes](docs/wiki/release-notes.md).
+See the [1.0.6 release notes](docs/wiki/release-notes.md).
 
 ## Features
 
@@ -27,12 +30,12 @@ See the [1.0.5 release notes](docs/wiki/release-notes.md).
   without setting a respawn point.
 - Multiplayer sleeping-percentage control and server handling of wake requests.
 
-The config file is `config/sleepcycleconfig-1.0.5.properties`. Config screens edit
+The config file is `config/sleepcycleconfig-1.0.6.properties`. Config screens edit
 local values; server configuration is not automatically synchronized to clients.
 
 ## Development and validation
 
-Canonical source is in `common/`, `fabric/` and `neoforge/`; target dependencies
+Canonical source is in `common/`, `fabric/`, `forge/` and `neoforge/`; target dependencies
 are defined once in `gradle/matrix/*.properties`. Use the existing wrapper:
 
 ```text
@@ -43,7 +46,7 @@ python build-smart.py release-smoke
 ```
 
 Installable JARs are written to `build/libs/<minecraft>-<loader>/`. The build
-requires Java 25 for Gradle and Java 21/25 target toolchains.
+requires Java 25 for Gradle and Java 17/21/25 target toolchains.
 
 See [acceptance results and manual gameplay checks](docs/development/testing.md),
 [SleepCycle compatibility decisions](docs/development/sleepcycle-compatibility.md)

@@ -19,7 +19,7 @@ def fixture_plan(environment='both'):
         root = Path(directory)
         shutil.copytree(ROOT / 'gradle/matrix', root / 'gradle/matrix')
         shutil.copyfile(ROOT / 'gradle.properties', root / 'gradle.properties')
-        for loader in ('fabric', 'neoforge'):
+        for loader in ('fabric', 'forge', 'neoforge'):
             shutil.copytree(ROOT / loader / 'src/main/resources', root / loader / 'src/main/resources')
         config = PUBLISH['properties'](ROOT / 'gradle/publishing.properties')
         if environment != 'both':
@@ -30,6 +30,8 @@ def fixture_plan(environment='both'):
             fabric.write_text(json.dumps(metadata))
             neo = root / 'neoforge/src/main/resources/META-INF/neoforge.mods.toml'
             neo.write_text(neo.read_text().replace('side = "BOTH"', 'side = "' + environment.upper() + '"'))
+            forge = root / 'forge/src/main/resources/META-INF/mods.toml'
+            forge.write_text(forge.read_text().replace('side = "BOTH"', 'side = "' + environment.upper() + '"'))
         config['environment'] = environment
         config.update(modrinth_project_id='synthetic-mr-id', curseforge_project_id='123456',
                       curseforge_project_slug='synthetic-sleepcycle',
@@ -74,7 +76,7 @@ class PublishingSafety(unittest.TestCase):
             root = Path(directory)
             shutil.copytree(ROOT / 'gradle/matrix', root / 'gradle/matrix')
             shutil.copyfile(ROOT / 'gradle.properties', root / 'gradle.properties')
-            for loader in ('fabric', 'neoforge'):
+            for loader in ('fabric', 'forge', 'neoforge'):
                 shutil.copytree(ROOT / loader / 'src/main/resources', root / loader / 'src/main/resources')
             config = PUBLISH['properties'](ROOT / 'gradle/publishing.properties')
             config.update(modrinth_project_id='synthetic-mr-id', curseforge_project_id='123456')
@@ -87,12 +89,12 @@ class PublishingSafety(unittest.TestCase):
                 data = PUBLISH['publication_plan'](root)
         self.assertEqual({r["target"] for r in data["entries"]}, {p.stem for p in (ROOT / 'gradle/matrix').glob('*.properties')})
         self.assertEqual(len({r['version_number'] for r in data['entries']}), len(data['entries']))
-        self.assertEqual(len(data['entries']), 12)
+        self.assertEqual(len(data['entries']), len(list((ROOT / 'gradle/matrix').glob('*.properties'))))
         self.assertEqual(data['project_id'], 'synthetic-mr-id')
         self.assertEqual(data['curseforge_project_id'], '123456')
         self.assertEqual(data['modrinth_environments'], dict(client_side='required', server_side='required'))
         for row in data['entries']:
-            loader = {'fabric': 'Fabric', 'neoforge': 'NeoForge'}[row['loader']]
+            loader = {'fabric': 'Fabric', 'forge': 'Forge', 'neoforge': 'NeoForge'}[row['loader']]
             self.assertEqual(row['version_name'], f"[{loader}] SleepCycle {data['mod_version']} ({row['minecraft']})")
             self.assertEqual(row['version_number'], f"{data['mod_version']}-{row['minecraft']}-{row['loader']}")
             self.assertEqual(row['artifact'], f"build/libs/{row['target']}/sleepcycle-{row['loader']}-{row['minecraft']}-{data['mod_version']}.jar")
@@ -164,7 +166,7 @@ class PublishingSafety(unittest.TestCase):
                         name='Sleep Cycle ' + data['mod_version'], game_versions=['26.2'], loaders=['fabric'])
         with self.assertRaisesRegex(ValueError, 'Existing Modrinth'):
             PUBLISH['check_duplicates'](data, [existing])
-        for change in ({'name': 'Sleep Cycle ' + data['mod_version'] + '0'}, {'loaders': ['quilt']}, {'game_versions': ['1.20.1']}):
+        for change in ({'name': 'Sleep Cycle ' + data['mod_version'] + '0'}, {'loaders': ['quilt']}, {'game_versions': ['unsupported-test-version']}):
             PUBLISH['check_duplicates'](data, [dict(existing, **change)])
         file = dict(id=1, name='sleepcycle-' + data['mod_version'] + '-v26.2-fabric.jar', versions=['26.2', 'Fabric'])
         with self.assertRaisesRegex(ValueError, 'Existing CurseForge'):
@@ -195,8 +197,19 @@ class PublishingSafety(unittest.TestCase):
         config = PUBLISH['properties'](ROOT / 'gradle/publishing.properties')
         with self.assertRaisesRegex(ValueError, 'Unmapped'):
             PUBLISH['dependencies']('{"depends":{"unexpected-mod":"*"}}', 'fabric', {}, config)
-        with self.assertRaisesRegex(ValueError, 'Missing NeoForge dependency'):
+        with self.assertRaisesRegex(ValueError, 'Missing loader dependency'):
             PUBLISH['dependencies']('[[dependencies.unrelated]]\nmodId="architectury"\ntype="required"\n', 'neoforge', {}, config)
+
+    def test_forge_required_optional_metadata_and_missing_mandatory(self):
+        config = PUBLISH['properties'](ROOT / 'gradle/publishing.properties')
+        metadata = '[[dependencies.sleepcycle]]\nmodId="forge"\nmandatory=true\n' + \
+                   '[[dependencies.sleepcycle]]\nmodId="architectury"\nmandatory=true\n'
+        result = PUBLISH['dependencies'](metadata, 'forge', {}, config)
+        self.assertEqual([(d['mod_id'], d['dependency_type']) for d in result], [('architectury', 'required')])
+        result = PUBLISH['dependencies'](metadata.replace('mandatory=true', 'mandatory=false'), 'forge', {}, config)
+        self.assertEqual(result[0]['dependency_type'], 'optional')
+        with self.assertRaisesRegex(ValueError, 'Missing Forge dependency requirement'):
+            PUBLISH['dependencies'](metadata.replace('mandatory=true', ''), 'forge', {}, config)
 
     def test_cli_overrides_cannot_bypass_confirmation_or_debug_mode(self):
         project = WRAPPER['Project'](ROOT)
@@ -325,7 +338,7 @@ class PublishingSafety(unittest.TestCase):
             with patch.dict(PUBLISH['collect'].__globals__, replacements), patch.dict(os.environ, {}, clear=True), patch('builtins.print'):
                 PUBLISH['collect']()
                 bundle = root / 'build/publishing/github-assets'
-                self.assertEqual(len(list(bundle.glob('*.jar'))), 12)
+                self.assertEqual(len(list(bundle.glob('*.jar'))), len(data['entries']))
                 PUBLISH['restore'](bundle)
                 extra = bundle / 'unexpected-dev.jar'
                 extra.touch()

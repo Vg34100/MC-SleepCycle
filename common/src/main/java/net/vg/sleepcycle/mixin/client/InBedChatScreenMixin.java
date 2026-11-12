@@ -58,7 +58,7 @@ public abstract class InBedChatScreenMixin extends Screen {
             Component label = Component.translatable(WAKE_KEYS[i])
                 .withStyle(i == currentZone ? ChatFormatting.YELLOW : ChatFormatting.WHITE);
             Button btn = Button.builder(label,
-                b -> NetworkManager.sendToServer(new WakeAtPacket(WAKE_TIMES[idx]))
+                b -> net.vg.sleepcycle.network.ModNetwork.sendWakeTarget(WAKE_TIMES[idx])
             ).bounds(startX + i * (btnW + pad), defaultY, btnW, btnH).build();
             this.addRenderableWidget(btn);
         }
@@ -70,7 +70,11 @@ public abstract class InBedChatScreenMixin extends Screen {
         try {
             Holder<WorldClock> clock = mc.level.registryAccess()
                 .lookupOrThrow(Registries.WORLD_CLOCK).getOrThrow(WorldClocks.OVERWORLD);
+            //? if >=26.3 {
+            /*return mc.level.clockManager().getInstance(clock).totalTicks() % 24000;
+            *///? } else {
             return mc.level.clockManager().getTotalTicks(clock) % 24000;
+            //? }
         } catch (Exception e) {
             return 0;
         }

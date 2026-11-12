@@ -21,6 +21,8 @@ def minecraftVersion = required('minecraft_version')
 def javaVersion = required('java_version') as int
 def legacy = required('loom_generation') == 'legacy'
 def isFabric = loader == 'fabric'
+def isForge = loader == 'forge'
+def isNeoForge = loader == 'neoforge'
 
 
 group = rootProject.maven_group
@@ -28,7 +30,8 @@ version = rootProject.mod_version
 apply plugin: legacy ? 'dev.architectury.loom' : 'dev.architectury.loom-no-remap'
 // Each node already owns common + loader sources. Architectury API remains a
 // dependency, but no common-project transformation/Gradle plugin is required.
-if (!isFabric) loom { neoForge {} }
+if (isNeoForge) loom { neoForge {} }
+if (isForge) loom { forge { mixinConfig 'sleepcycle.mixins.json' } }
 if (legacy) loom { silentMojangMappingsLicense() }
 if (!legacy && isFabric) loom { accessWidenerPath = rootProject.file('common/src/main/resources/sleepcycle.accesswidener') }
 
@@ -115,6 +118,9 @@ dependencies {
     if (isFabric) {
         modDependency("net.fabricmc:fabric-loader:${required('fabric_loader_version')}")
         modDependency("net.fabricmc.fabric-api:fabric-api:${required('fabric_api_version')}")
+    } else if (isForge) {
+        forge "net.minecraftforge:forge:${minecraftVersion}-${required('forge_version')}"
+        compileOnly "net.fabricmc:fabric-loader:${required('fabric_loader_version')}"
     } else {
         neoForge "net.neoforged:neoforge:${required('neoforge_version')}"
         // Common client annotations compile against Fabric Loader on both loaders.
@@ -152,6 +158,8 @@ def metadata = [
     java_version: javaVersion,
     architectury_api_version: required('architectury_api_version'),
     fabric_loader_version: required('fabric_loader_version'),
+    forge_version: matrix.getProperty('forge_version', ''),
+    fml_loader_major: matrix.getProperty('fml_loader_version', '4').tokenize('.')[0],
     neoforge_version: matrix.getProperty('neoforge_version', ''),
     neoforge_icon_field: stonecutter.eval(minecraftVersion, '>=26.2') ? 'iconFile' : 'logoFile',
     neoforge_compat_mixins: !isFabric && stonecutter.eval(minecraftVersion, '>=26.1') && stonecutter.eval(minecraftVersion, '<26.1.2')
@@ -161,7 +169,7 @@ processResources {
     // Canonical resources take priority over checked-in datagen duplicates.
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     inputs.properties(metadata)
-    filesMatching(['fabric.mod.json', 'META-INF/neoforge.mods.toml', '*.mixins.json']) { expand(metadata) }
+    filesMatching(['fabric.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml', '*.mixins.json']) { expand(metadata) }
 }
 apply from: rootProject.file('gradle/resource-compat.gradle')
 
@@ -183,6 +191,7 @@ tasks.named('runServer', JavaExec) {
 }
 tasks.named('jar') {
     destinationDirectory = rootProject.layout.buildDirectory.dir("libs/${project.name}")
+    if (isForge) manifest.attributes('MixinConfigs': 'sleepcycle.mixins.json')
     from(rootProject.file('LICENSE')) { rename { "${it}_${rootProject.archives_name}" } }
 }
 if (legacy) {
@@ -195,14 +204,19 @@ tasks.register('packageTarget') {
 
 // Stage ordinary installed mods for either production launcher. Dependencies
 // come from their original artifacts, never Loom's remapped development cache.
-if (isFabric || loader == 'neoforge') {
+if (isFabric || isForge || isNeoForge) {
     def smokeRun = layout.dir(providers.gradleProperty('release_smoke_dir').map { rootProject.file(it) })
     def smokeDependencies = configurations.create('releaseSmokeMods') {
         canBeConsumed = false
-        // localRuntime/modLocalRuntime contain optional development fixtures.
-        extendsFrom(*((legacy ? ['modImplementation', 'modRuntimeOnly']
-                : ['implementation', 'runtimeOnly']).collect { configurations.getByName(it) }))
+        canBeResolved = true
+        // Stage published parent mods, not Loom's remapped/transitive development view.
+        transitive = false
         attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+    }
+    dependencies.add(smokeDependencies.name, "dev.architectury:architectury-${loader}:${required('architectury_api_version')}")
+    if (isFabric) {
+        dependencies.add(smokeDependencies.name, "net.fabricmc.fabric-api:fabric-api:${required('fabric_api_version')}")
+        dependencies.add(smokeDependencies.name, "com.terraformersmc:modmenu:${required('modmenu_version')}")
     }
     def stage = tasks.register('stageReleaseClient') {
         dependsOn 'packageTarget'

@@ -1,0 +1,36 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "MIT"
+issueTrackerURL = "https://github.com/Vg34100/MC-SleepCycle/issues"
+
+[[mods]]
+modId = "sleepcycle"
+version = "${version}"
+displayName = "Sleep Cycle"
+authors = "VgLevelUp"
+description = "Progressive sleep, healing, sleep effects and colored sleeping bags."
+logoFile = "assets/sleepcycle/icon.png"
+
+[features.sleepcycle]
+javaVersion = "[${java_version},)"
+
+[[dependencies.sleepcycle]]
+modId = "forge"
+mandatory = true
+versionRange = "[${forge_version},)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.sleepcycle]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[${minecraft_version}]"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.sleepcycle]]
+modId = "architectury"
+mandatory = true
+versionRange = "[${architectury_api_version},)"
+ordering = "AFTER"
+side = "BOTH"

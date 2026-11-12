@@ -27,21 +27,6 @@ public class ModConfigs {
     // experimental
     public static int TICKS_PER_TICK;
 
-    public static String[] necessaryConfigs = {
-        "sleep.allow.day.sleep",
-        "sleep.day.skip.speed",
-        "sleep.sleep.tick.multiplier",
-        "sleep.well.rested.wait",
-        "sleep.tired.wait",
-        "sleep.well.rested.length",
-        "sleep.tired.length",
-        "sleep.grant.buffs",
-        "sleep.do.regeneration",
-        "sleep.change.tick.speed",
-        "sleep.sleep.button.height",
-        "sleep.change.camera.pos",
-        "sleep.tick.per.tick"
-    };
 
     public static void registerConfigs() {
         configs = new ModConfigProvider();

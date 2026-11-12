@@ -3,15 +3,14 @@ package net.vg.sleepcycle.client.gui.screen.option;
 import com.mojang.serialization.Codec;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.options.OptionsSubScreen;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.network.chat.Component;
 import net.vg.sleepcycle.config.ModConfigs;
 
-public class ServerOptionScreen extends OptionsSubScreen {
+public class ServerOptionScreen extends SleepCycleOptionsScreen {
 
     public ServerOptionScreen(Screen parent) {
-        super(parent, Minecraft.getInstance().options, Component.translatable("config.server.title"));
+        super(parent, Component.translatable("config.server.title"));
     }
 
     @Override

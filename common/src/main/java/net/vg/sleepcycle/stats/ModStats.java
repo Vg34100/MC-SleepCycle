@@ -15,19 +15,19 @@ public class ModStats {
 
     public static final RegistrySupplier<Identifier> TIME_SLEPT =
             CUSTOM_STATS.register("time_slept",
-                    () -> Identifier.fromNamespaceAndPath(Constants.MOD_ID, "time_slept"));
+                    () -> net.vg.sleepcycle.util.ModIds.id("time_slept"));
 
     public static final RegistrySupplier<Identifier> WELL_RESTED_SLEEPS =
             CUSTOM_STATS.register("well_rested_sleeps",
-                    () -> Identifier.fromNamespaceAndPath(Constants.MOD_ID, "well_rested_sleeps"));
+                    () -> net.vg.sleepcycle.util.ModIds.id("well_rested_sleeps"));
 
     public static final RegistrySupplier<Identifier> TIRED_SLEEPS =
             CUSTOM_STATS.register("tired_sleeps",
-                    () -> Identifier.fromNamespaceAndPath(Constants.MOD_ID, "tired_sleeps"));
+                    () -> net.vg.sleepcycle.util.ModIds.id("tired_sleeps"));
 
     public static final RegistrySupplier<Identifier> HEALTH_REGAINED =
             CUSTOM_STATS.register("health_regained",
-                    () -> Identifier.fromNamespaceAndPath(Constants.MOD_ID, "health_regained"));
+                    () -> net.vg.sleepcycle.util.ModIds.id("health_regained"));
 
     public static void register() {
         CUSTOM_STATS.register();

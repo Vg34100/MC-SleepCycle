@@ -41,23 +41,27 @@ def listing(kind, values):
     return bytes([kind]) + integer(len(values)) + b''.join(values)
 
 
-def template():
+COLORS = ('white', 'orange', 'magenta', 'light_blue', 'yellow', 'lime', 'pink', 'gray',
+          'light_gray', 'cyan', 'purple', 'blue', 'brown', 'green', 'red', 'black')
+
+
+def template(legacy=False):
     states = [compound(named(8, 'Name', text_payload('minecraft:stone')))]
-    for part in ('foot', 'head'):
-        properties = compound(*(named(8, name, text_payload(value)) for name, value in
-                                [('facing', 'south'), ('part', part), ('occupied', 'false')]))
-        states.append(compound(named(8, 'Name', text_payload('sleepcycle:sleeping_bag_red')),
-                               named(10, 'Properties', properties)))
     blocks = []
-    for state, pos in [(0, (0, 0, 0)), (0, (0, 0, 1)), (1, (0, 1, 0)), (2, (0, 1, 1))]:
-        tags = [named(3, 'state', integer(state)), named(9, 'pos', listing(3, [integer(p) for p in pos]))]
-        if state:
-            tags.append(named(10, 'nbt', compound(named(8, 'id', text_payload('sleepcycle:sleeping_bag')))))
-        blocks.append(compound(*tags))
-    # The 1.21 structure representation is forward-readable; mod IDs/states do
-    # not change during vanilla's data fixing.
-    return named(10, '', compound(named(3, 'DataVersion', integer(3955)),
-                                 named(9, 'size', listing(3, [integer(p) for p in (1, 2, 2)])),
+    for i, color in enumerate(COLORS):
+        for z, part in enumerate(('foot', 'head')):
+            properties = compound(*(named(8, name, text_payload(value)) for name, value in
+                                    [('facing', 'south'), ('part', part), ('occupied', 'false')]))
+            states.append(compound(named(8, 'Name', text_payload('sleepcycle:sleeping_bag_' + color)),
+                                   named(10, 'Properties', properties)))
+            for y, state in [(0, 0), (1, len(states) - 1)]:
+                tags = [named(3, 'state', integer(state)),
+                        named(9, 'pos', listing(3, [integer(p) for p in (i * 2, y, z)]))]
+                if state:
+                    tags.append(named(10, 'nbt', compound(named(8, 'id', text_payload('sleepcycle:sleeping_bag')))))
+                blocks.append(compound(*tags))
+    return named(10, '', compound(named(3, 'DataVersion', integer(3465 if legacy else 3955)),
+                                 named(9, 'size', listing(3, [integer(p) for p in (32, 2, 2)])),
                                  named(9, 'palette', listing(10, states)),
                                  named(9, 'blocks', listing(10, blocks)),
                                  named(9, 'entities', listing(10, []))))
@@ -68,9 +72,14 @@ def prepare(project, target, run_dir):
     (run_dir / 'eula.txt').write_text('eula=true\n')
     (run_dir / 'server.properties').write_text(
         'server-ip=127.0.0.1\nserver-port=0\nonline-mode=false\nview-distance=2\n'
-        'simulation-distance=2\nspawn-protection=0\nlevel-name=probe-world\n')
+        'simulation-distance=2\nspawn-protection=0\nlevel-name=probe-world\n'
+        'level-type=minecraft:flat\ngenerate-structures=false\n'
+        'generator-settings={"layers":[{"height":1,"block":"minecraft:bedrock"},'
+        '{"height":2,"block":"minecraft:dirt"},{"height":1,"block":"minecraft:grass_block"}],'
+        '"biome":"minecraft:plains"}\n')
     pack = run_dir / 'probe-world/datapacks/sleepcycle_probe'
-    data = pack / 'data/sleepcycle_probe/structure'
+    legacy = target.version == '1.20.1'
+    data = pack / ('data/sleepcycle_probe/structures' if legacy else 'data/sleepcycle_probe/structure')
     data.mkdir(parents=True)
     gradle_home = Path(os.environ.get('GRADLE_USER_HOME', Path.home() / '.gradle'))
     game = gradle_home / 'caches/fabric-loom' / target.version / 'minecraft-client.jar'
@@ -83,19 +92,22 @@ def prepare(project, target, run_dir):
     else:
         metadata['pack_format'] = format['data']
     (pack / 'pack.mcmeta').write_text(json.dumps(dict(pack=metadata)))
-    (data / 'bags.nbt').write_bytes(gzip.compress(template()))
+    (data / 'bags.nbt').write_bytes(gzip.compress(template(legacy)))
 
 
-def run(project, target, args):
+def run(project, target, args, run_dir=None):
     token = uuid.uuid4().hex
-    run_dir = ROOT / 'runs' / target.name / 'server-smoke' / token
-    prepare(project, target, run_dir)
+    reopening = run_dir is not None
+    run_dir = run_dir or ROOT / 'runs' / target.name / 'server-smoke' / token
+    if not reopening:
+        prepare(project, target, run_dir)
     extra = [f'-Psleepcycle_server_smoke_dir={run_dir}', *args]
     java, message, fatal = WRAPPER['select_gradle_java'](project, extra)
     if fatal:
         raise RuntimeError(message)
     command = WRAPPER['gradle_command'](project, [f':{target.name}:runServer', *extra], java)
-    print(f'Dedicated-server probe: {target.name} | fresh world {run_dir}', flush=True)
+    mode = 'reopened' if reopening else 'fresh'
+    print(f'Dedicated-server probe: {target.name} | {mode} world {run_dir}', flush=True)
     process = WRAPPER['popen'](command, ROOT, WRAPPER['subprocess'].PIPE, isolate=True)
     lines, ready, reload_done, checked, stopping = [], False, False, False, False
     phase_at = started = time.monotonic()
@@ -121,7 +133,7 @@ def run(project, target, args):
                         raise RuntimeError('Runtime error: ' + line)
                     if not ready and WRAPPER['SERVER_READY'].search(line):
                         ready, stage, phase_at = True, 'reloading', now
-                        send(['reload', 'forceload add 0 0'])
+                        send(['reload', 'forceload add 0 0 31 1'])
                     elif stage == 'reloading' and re.search(r'Loaded \d+ advancements', line):
                         reload_done = True
                     elif stage == 'checking' and 'Saved the game' in line:
@@ -130,11 +142,12 @@ def run(project, target, args):
                     stopping = stopping or bool(WRAPPER['SERVER_STOPPING'].search(line))
                 if stage == 'reloading' and reload_done and now - phase_at >= 3:
                     stage, phase_at = 'checking', now
-                    send(['place template sleepcycle_probe:bags 0 70 0',
-                          'data get block 0 71 0 id', 'data get block 0 71 1 id',
-                          'execute if block 0 71 0 sleepcycle:sleeping_bag_red[facing=south,part=foot] run say SLEEPCYCLE_BAG_FOOT_OK',
-                          'execute if block 0 71 1 sleepcycle:sleeping_bag_red[facing=south,part=head] run say SLEEPCYCLE_BAG_HEAD_OK',
-                          'save-all flush'])
+                    commands = [] if reopening else ['place template sleepcycle_probe:bags 0 70 0']
+                    for i, color in enumerate(COLORS):
+                        for z, part in enumerate(('foot', 'head')):
+                            commands += [f'data get block {i * 2} 71 {z} id',
+                                         f'execute if block {i * 2} 71 {z} sleepcycle:sleeping_bag_{color}[facing=south,part={part}] run say SLEEPCYCLE_BAG_{color}_{part}_OK']
+                    send(commands + ['save-all flush'])
                 if now - started > float(os.environ.get('BUILD_SMART_SERVER_READY_TIMEOUT', '600')):
                     raise RuntimeError('Dedicated server timed out')
                 if ready and now - phase_at > 120:
@@ -143,17 +156,17 @@ def run(project, target, args):
         runtime = '\n'.join(lines)
         if not (ready and reload_done and checked and stopping and process.returncode == 0):
             raise RuntimeError('Server did not reach ready/reload/save/clean shutdown milestones')
-        if not all(marker in runtime for marker in ('SLEEPCYCLE_BAG_FOOT_OK', 'SLEEPCYCLE_BAG_HEAD_OK')):
+        if not all(f'SLEEPCYCLE_BAG_{color}_{part}_OK' in runtime for color in COLORS for part in ('foot', 'head')):
             raise RuntimeError('Sleeping-bag block state probe failed')
-        if runtime.count('"sleepcycle:sleeping_bag"') < 2:
+        if runtime.count('"sleepcycle:sleeping_bag"') < 32:
             raise RuntimeError('Sleeping-bag block entity identity probe failed')
         evidence = log.with_suffix('.json')
         evidence.write_text(json.dumps(dict(target=target.name, java=target.java, mode='development dedicated server',
-                                           ready=True, reload=True, sleeping_bag_states=True,
+                                           ready=True, reload=True, sleeping_bag_states=True, colors=16, world_reopened=reopening,
                                            sleeping_bag_block_entity_ids=True, save_flush=True, clean_stop=True,
                                            gameplay_with_players='manual check required', run_dir=str(run_dir)), indent=2) + '\n')
         print(f'PASS {target.name}: ready, data reload, bag states/block entity IDs, save flush, clean stop | {evidence}', flush=True)
-        return True
+        return run_dir
     except (OSError, RuntimeError, WRAPPER['subprocess'].SubprocessError) as error:
         print(f'FAIL {target.name}: {error} | retained log {log}', flush=True)
         for line in lines[-12:]:
@@ -167,11 +180,14 @@ def run(project, target, args):
 if __name__ == '__main__':
     project = WRAPPER['Project'](ROOT)
     selected = sys.argv[1] if len(sys.argv) > 1 else 'representatives'
+    reopen = '--reopen' in sys.argv
+    extra = [arg for arg in sys.argv[2:] if arg != '--reopen']
     targets = ([target for target in project.targets if target.props.get('release_smoke') == 'true']
                if selected == 'representatives' else [target for target in project.targets if target.name == selected])
     if not targets:
         raise SystemExit('Use a registered target or representatives')
     for target in sorted(targets, key=lambda t: (t.legacy, t.loader, t.version)):
-        if not run(project, target, sys.argv[2:]):
+        directory = run(project, target, extra)
+        if not directory or (reopen and not run(project, target, extra, directory)):
             raise SystemExit(1)
     print(f'SERVER PROBE PASS ({len(targets)}/{len(targets)})')

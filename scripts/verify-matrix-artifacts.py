@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import re
 import struct
+import sys
 from zipfile import BadZipFile, ZipFile
 
 try:
@@ -46,6 +47,9 @@ def inspect(matrix):
     assert matrix.stem == f"{pins['minecraft_version']}-{pins['loader']}", 'Target/property mismatch'
     artifact = release_jar(matrix)
     legacy = pins['loom_generation'] == 'legacy'
+    old = pins['minecraft_version'] == '1.20.1'
+    loader = pins['loader']
+    data_dir = lambda name: 'data/sleepcycle/' + name + ('s' if old else '') + '/'
     root_pins = properties(ROOT / 'gradle.properties')
     with ZipFile(artifact) as jar:
         entries = jar.namelist()
@@ -77,14 +81,14 @@ def inspect(matrix):
         assert mixins['required'] is True
         assert mixins['compatibilityLevel'] == 'JAVA_' + pins['java_version']
         assert mixins['client'] == ['client.CameraMixin', 'client.InBedChatScreenMixin']
-        assert mixins['mixins'] == (['BedBlockMixin', 'MinecraftServerMixin', 'SleepStatusMixin'] if legacy else ['BedBlockMixin', 'MinecraftServerMixin', 'PlayerTickMixin', 'ServerPlayerSleepMixin', 'SleepStatusMixin'])
+        assert mixins['mixins'] == (['BedBlockMixin', 'MinecraftServerMixin', 'SleepStatusMixin', 'LegacyCriteriaInvoker', 'LegacyTiredMiningMixin'] if old else (['BedBlockMixin', 'MinecraftServerMixin', 'SleepStatusMixin'] if legacy else ['BedBlockMixin', 'MinecraftServerMixin', 'PlayerTickMixin', 'ServerPlayerSleepMixin', 'SleepStatusMixin']))
         assert mixins['package'] == 'net.vg.sleepcycle.mixin'
         for side in ('mixins', 'client', 'server'):
             for mixin in mixins.get(side, []):
                 name = (mixins['package'] + '.' + mixin).replace('.', '/') + '.class'
                 assert name in files, f'Missing mixin class: {name}'
         if pins['loader'] == 'fabric':
-            assert 'META-INF/neoforge.mods.toml' not in files, 'Wrong loader metadata'
+            assert not {'META-INF/neoforge.mods.toml', 'META-INF/mods.toml'} & files, 'Wrong loader metadata'
             meta = read_json('fabric.mod.json')
             assert meta['id'] == MOD_ID and meta['version'] == root_pins['mod_version']
             assert meta['depends']['minecraft'] == pins['minecraft_version']
@@ -113,24 +117,33 @@ def inspect(matrix):
 
         else:
             assert 'fabric.mod.json' not in files, 'Wrong loader metadata'
-            meta = jar.read('META-INF/neoforge.mods.toml').decode()
+            meta_path = 'META-INF/mods.toml' if loader == 'forge' else 'META-INF/neoforge.mods.toml'
+            meta = jar.read(meta_path).decode()
+            assert ('META-INF/neoforge.mods.toml' if loader == 'forge' else 'META-INF/mods.toml') not in files
             assert quoted(meta, 'modId') == MOD_ID
             assert quoted(meta, 'version') == root_pins['mod_version']
-            assert PACKAGE + 'neoforge/SleepCycleNeoForge.class' in files
+            assert PACKAGE + ('forge/SleepCycleForge.class' if loader == 'forge' else 'neoforge/SleepCycleNeoForge.class') in files
             blocks = re.findall(r'\[\[dependencies\.sleepcycle\]\](.*?)(?=\n\[|\Z)', meta, re.DOTALL)
             deps = {quoted(block, 'modId'): block for block in blocks}
-            assert set(deps) == {'minecraft', 'neoforge', 'architectury'}
+            assert set(deps) == {'minecraft', loader, 'architectury'}
             assert quoted(deps['minecraft'], 'versionRange') == '[' + pins['minecraft_version'] + ']'
-            for dep, pin in (('neoforge', 'neoforge_version'), ('architectury', 'architectury_api_version')):
+            for dep, pin in ((loader, loader + '_version'), ('architectury', 'architectury_api_version')):
                 assert quoted(deps[dep], 'versionRange') == '[' + pins[pin] + ',)'
-            assert all(quoted(deps[dep], 'type') == 'required' for dep in ('minecraft', 'neoforge', 'architectury'))
+            if loader == 'forge':
+                assert all(re.search(r'^mandatory\s*=\s*true$', block, re.MULTILINE) for block in deps.values())
+                assert b'MixinConfigs: sleepcycle.mixins.json' in jar.read('META-INF/MANIFEST.MF')
+            else:
+                assert all(quoted(block, 'type') == 'required' for block in deps.values())
             assert all(quoted(block, 'side') == 'BOTH' for block in deps.values())
             if tomllib is not None:
                 tomllib.loads(meta)
             assert quoted(meta, 'javaVersion') == '[' + pins['java_version'] + ',)'
-            icon_field = 'iconFile' if pins['minecraft_version'] == '26.2' else 'logoFile'
+            expected_fml = '47' if loader == 'forge' else pins.get('fml_loader_version', '4').split('.')[0]
+            assert quoted(meta, 'loaderVersion') == '[' + expected_fml + ',)'
+            icon_field = 'iconFile' if pins['minecraft_version'].startswith('26.') and tuple(map(int, pins['minecraft_version'].split('.'))) >= (26, 2) else 'logoFile'
             assert quoted(meta, icon_field) in files
-            assert quoted(meta, 'config') == 'sleepcycle.mixins.json'
+            if loader == 'neoforge':
+                assert quoted(meta, 'config') == 'sleepcycle.mixins.json'
         early_neo = pins['loader'] == 'neoforge' and pins['minecraft_version'] in ('26.1', '26.1.1')
         config = 'sleepcycle.early-neoforge.mixins.json'
         assert (config in files) == early_neo, 'Wrong early-NeoForge compatibility resources'
@@ -144,21 +157,21 @@ def inspect(matrix):
         if pins['loader'] == 'neoforge':
             expected = ['sleepcycle.mixins.json'] + ([config] if early_neo else [])
             assert re.findall(r'^config\s*=\s*"([^"]+)"', meta, re.MULTILINE) == expected
-        assert not any(name.startswith(PACKAGE + ('neoforge/' if pins['loader'] == 'fabric' else 'fabric/'))
-                       for name in classes), 'Wrong loader classes'
+        for other in {'fabric', 'forge', 'neoforge'} - {loader}:
+            assert not any(name.startswith(PACKAGE + other + '/') for name in classes), 'Wrong loader classes'
         for name in ('PlayerTickMixin', 'ServerPlayerSleepMixin'):
             assert (PACKAGE + 'mixin/' + name + '.class' in files) == (not legacy)
         assert 'assets/sleepcycle/lang/en_us.json' in files
         # Saved/public IDs stay identical across API generations.
-        assert read_json('data/sleepcycle/advancement/sleep_5_min.json')['criteria']['sleep_5_min']['trigger'] == 'sleepcycle:tutorialmod.sleep'
+        assert read_json(data_dir('advancement') + 'sleep_5_min.json')['criteria']['sleep_5_min']['trigger'] == 'sleepcycle:tutorialmod.sleep'
         for effect in ('well_rested', 'tired'):
             assert f'assets/sleepcycle/sounds/{effect}.ogg' in files
         recipes = sorted((ROOT / 'common/src/main/resources/data/sleepcycle/recipe').glob('sleeping_bag_*.json'))
         assert len(recipes) == 16, 'Expected the canonical 16 colored sleeping bags'
         for recipe in recipes:
             stem = recipe.stem
-            data = read_json('data/sleepcycle/recipe/' + recipe.name)
-            assert data['result'] == {'count': 1, 'id': 'sleepcycle:' + stem}
+            data = read_json(data_dir('recipe') + recipe.name)
+            assert data['result'] == {'count': 1, ('item' if old else 'id'): 'sleepcycle:' + stem}
             assert isinstance(data['key']['i'], dict) == legacy, 'Wrong recipe ingredient schema'
             for path in (f'assets/sleepcycle/blockstates/{stem}.json',
                          f'assets/sleepcycle/models/block/{stem}.json', f'assets/sleepcycle/models/block/{stem}_head.json',
@@ -166,9 +179,27 @@ def inspect(matrix):
                 assert path in files, f'Missing sleeping bag resource: {path}'
             assert (f'assets/sleepcycle/items/{stem}.json' in files) == (not legacy), 'Wrong item definition generation'
 
+        if old:
+            for name in files:
+                if name.startswith('data/sleepcycle/advancements/') and name.endswith('.json'):
+                    data = read_json(name)
+                    assert 'id' not in data.get('display', {}).get('icon', {}), 'Modern advancement icon in 1.20.1'
+                    for criterion in data.get('criteria', {}).values():
+                        for predicate in criterion.get('conditions', {}).get('items', []):
+                            assert not isinstance(predicate.get('items'), str), 'Modern item predicate in 1.20.1'
+            assert not any(name.startswith(('data/sleepcycle/recipe/', 'data/sleepcycle/advancement/')) for name in files)
+        if pins['minecraft_version'] == '26.3':
+            unlocks = [name for name in files if name.startswith('data/sleepcycle/advancement/recipes/') and name.endswith('.json')]
+            assert len(unlocks) == 16
+            for name in unlocks:
+                for criterion in read_json(name)['criteria'].values():
+                    if criterion['trigger'] == 'minecraft:recipe_unlocked':
+                        assert criterion['conditions'] == {'recipes': ['sleepcycle:' + Path(name).stem]}
+        for name in ('LegacyCriteriaInvoker', 'LegacyTiredMiningMixin'):
+            assert (PACKAGE + 'mixin/' + name + '.class' in files) == old
         assert any(name.startswith('LICENSE') for name in files)
         assert not any(name.endswith(('.jar', '.java')) for name in files), 'Embedded JAR or source archive'
-        for name in ('fabric.mod.json', 'META-INF/neoforge.mods.toml', 'sleepcycle.mixins.json'):
+        for name in ('fabric.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml', 'sleepcycle.mixins.json'):
             if name in files:
                 assert b'${' not in jar.read(name), f'Unexpanded metadata: {name}'
     print(f'{matrix.stem}: release metadata, classes, mixins and resources OK')
@@ -177,6 +208,10 @@ def inspect(matrix):
 
 if __name__ == '__main__':
     matrices = sorted((ROOT / 'gradle/matrix').glob('*.properties'))
+    if len(sys.argv) > 1:
+        selected = set(sys.argv[1:])
+        assert selected <= {m.stem for m in matrices}, 'Unknown matrix selection'
+        matrices = [m for m in matrices if m.stem in selected]
     assert matrices, 'No matrix properties found'
     for matrix in matrices:
         try:

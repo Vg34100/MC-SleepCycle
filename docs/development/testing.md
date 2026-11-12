@@ -1,5 +1,84 @@
 # SleepCycle release and conversion acceptance
 
+## 16-target port session — 2026-10-18
+
+Unreleased working-tree port on `main`, retaining mod version 1.0.5 and the twelve
+existing dependency pins. No commit, push, tag or publication was performed.
+Target dependencies remain owned by `gradle/matrix/*.properties`.
+
+| New target | Java | Compile | Package | Installable artifact |
+| --- | --- | --- | --- | --- |
+| 1.20.1-fabric | 17 | PASS | PASS | PASS |
+| 1.20.1-forge | 17 | PASS | PASS | PASS |
+| 26.3-fabric | 25 | PASS | PASS | PASS |
+| 26.3-neoforge | 25 | PASS | PASS | PASS |
+
+After new-target/runtime fixes, the aggregate checkpoint ran once:
+
+```text
+python build-smart.py matrix:compile packageMatrix
+python scripts/verify-matrix-artifacts.py
+```
+
+All **16/16 compile, 16/16 package, 16/16 artifact** checks passed. The combined
+Gradle invocation avoids configuring the matrix twice. Artifact checks enforce
+Java 17/21/25 bytecode, exact loader metadata/entrypoints, mixins, all bag resources,
+versioned recipe/advancement formats, remapping, and absence of bundled dependency
+classes, dev/common/source JAR selection or unexpanded metadata.
+
+Packaged production clients passed for **1.20.1 Forge, 26.3 NeoForge and 1.20.1
+Fabric**. Each proves the exact staged installable JAR/hash and loaded class
+origin, initial resource reload, startup marker and owned-process shutdown.
+Forge/NeoForge use the template's PortableMC route; Fabric uses Loom's production
+runner. Legacy Fabric includes ModMenu 7.2.2; Fabric excludes that client-only mod from
+the active dedicated-server mods. A client launch with ModMenu physically absent
+was not performed.
+No eight/sixteen-client sweep was run. Expected offline authentication/Realms
+errors are unrelated to the mod; no model/resource or mixin startup errors remain.
+
+The enhanced `scripts/smoke-sleepcycle-server.py` passed on **1.20.1 Forge,
+26.3 NeoForge and 1.20.1 Fabric**. Forge and NeoForge additionally reopened their
+actual saved worlds: **five successful server launches total**. Every launch
+verifies bootstrap with client classes present in the mod, data reload, foot/head
+states for all sixteen bag colors, all 32 block-entity identities, save flush and
+clean shutdown. Reopened worlds are checked without re-placing the bags. The
+legacy C2S channel registers successfully; no live player packet exchange is
+claimed. Temporary worlds/logs/evidence remain ignored under `runs/`,
+`build/server-smoke/` and the release-smoke temporary directories.
+
+```text
+python scripts/smoke-sleepcycle-server.py 1.20.1-forge --reopen
+python scripts/smoke-sleepcycle-server.py 26.3-neoforge --reopen
+python scripts/smoke-sleepcycle-server.py 1.20.1-fabric
+python build-smart.py smoke-release-client:1.20.1-forge
+python build-smart.py smoke-release-client:26.3-neoforge
+python build-smart.py smoke-release-client:1.20.1-fabric
+python tests/config_roundtrip.py
+```
+
+The config regression compiles/runs the original HEAD and updated implementations
+against customized historical/current files. Both 1.0.4 and 1.0.5 filenames retain
+all thirteen defaults and default comments, user values, unknown keys and comments
+across save/reload. Updated code also preserves UTF-8 values/comments and fills a
+missing default without losing existing settings. Tests passed on the actual
+Windows Java 17 runtime and the available native Java runtime; no config backend
+replacement, new filename policy or automatic version migration was introduced.
+
+Manual player checks remain: item placement/use/breaking for bags and no respawn
+change; daytime sleep enabled/disabled; wind-up, player-percentage and timed wake
+with two players; healing, absorption, Tired movement/attack/mining penalties;
+advancement/stat awards; camera and all settings screens/save/reopen. Server
+bootstrap and template placement do not establish these player interactions.
+Existing tick-speed/experimental behavior and server-config authority are retained.
+
+The reference guides informed identifier/property helpers, loader/client hooks,
+registration guards, the small legacy screen lifecycle and compatible config
+improvements. Proven API boundaries are in `sleepcycle-compatibility.md`. Release
+preparation, including Forge support in the existing publication manifest helper,
+is deferred to the separately authorized release stage. Public release artifacts
+and publishing identities are unchanged.
+
+
 ## Release 1.0.5
 
 The release changes version/publication metadata and documentation only. It keeps

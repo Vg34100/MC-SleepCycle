@@ -18,14 +18,20 @@ public abstract class CameraMixin {
     @Shadow
     protected abstract void setRotation(float yRot, float xRot);
 
-    @Shadow
-    protected abstract void move(float forwards, float up, float right);
+    //? if >=1.21 {
+    @Shadow protected abstract void move(float forwards, float up, float right);
+    //? } else {
+    /*@Shadow protected abstract void move(double forwards, double up, double right);
+    *///? }
 
     @Shadow
     private Entity entity;
 
-    @Shadow
-    protected abstract float getMaxZoom(float cameraDist);
+    //? if >=1.21 {
+    @Shadow protected abstract float getMaxZoom(float cameraDist);
+    //? } else {
+    /*@Shadow protected abstract double getMaxZoom(double cameraDist);
+    *///? }
 
     //? if >=26.1 {
     @Inject(method = "alignWithEntity", at = @At("TAIL"))

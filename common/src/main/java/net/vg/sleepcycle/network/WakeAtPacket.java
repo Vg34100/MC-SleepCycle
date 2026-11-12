@@ -1,3 +1,4 @@
+//? if >=1.21 {
 package net.vg.sleepcycle.network;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -9,7 +10,7 @@ import net.vg.sleepcycle.Constants;
 
 public record WakeAtPacket(long targetDayTime) implements CustomPacketPayload {
     public static final Type<WakeAtPacket> TYPE = new Type<>(
-            Identifier.fromNamespaceAndPath(Constants.MOD_ID, "wake_at")
+            net.vg.sleepcycle.util.ModIds.id("wake_at")
     );
     public static final StreamCodec<RegistryFriendlyByteBuf, WakeAtPacket> CODEC =
         StreamCodec.composite(
@@ -22,3 +23,9 @@ public record WakeAtPacket(long targetDayTime) implements CustomPacketPayload {
         return TYPE;
     }
 }
+
+//? } else {
+/*package net.vg.sleepcycle.network;
+
+public record WakeAtPacket(long targetDayTime) {}
+*///? }
