@@ -81,12 +81,12 @@ def acquire_portablemc(executable):
     print(f'PortableMC {PORTABLEMC_VERSION}: verified cached executable {executable}', flush=True)
 
 
-def neoforge_command(executable, root, version, legacy):
+def neoforge_command(executable, root, version, legacy, loader='neoforge', minecraft=None):
     return [str(executable), 'start', '--main-dir', ntpath.join(root, 'main'),
             '--mc-dir', ntpath.join(root, 'client'), '--jvm-policy', 'mojang',
             '--username', 'NeoSmoke', '--jvm-arg=-Xmx2G',
             '--jvm-arg=-Xlog:' + ('class*' if legacy else 'class+load') + '=info:file=class-load-%p.log',
-            '-vv', 'neoforge::' + version]
+            '-vv', ('neoforge::' + version if loader == 'neoforge' else f'forge::{minecraft}-{version}')]
 
 
 def staged_release(run_dir, artifact, sha256):
@@ -114,10 +114,10 @@ def run(command, run_dir, artifact, project_root, legacy=False, neoforge=None, l
     print(f"{'PortableMC' if neoforge else 'Loom'} production client; isolated directory: {run_dir}", flush=True)
     dependencies = ''
     if neoforge:
-        root, executable, version = neoforge
+        root, executable, version, *platform = neoforge
         try:
             acquire_portablemc(executable)
-            launch = neoforge_command(executable, root, version, legacy)
+            launch = neoforge_command(executable, root, version, legacy, *platform)
             with (log_dir / 'install.log').open('w') as output:
                 subprocess.run(launch + ['--dry'], stdout=output, stderr=subprocess.STDOUT, check=True,
                                timeout=float(os.environ.get('BUILD_SMART_RELEASE_INSTALL_TIMEOUT', '600')))

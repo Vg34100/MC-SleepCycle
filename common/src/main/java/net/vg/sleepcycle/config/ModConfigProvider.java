@@ -21,6 +21,10 @@ public class ModConfigProvider implements SimpleConfig.DefaultConfig {
         comments.add(new Pair<>(keyValuePair.getFirst(), comment));
     }
 
+    public List<String> keys() {
+        return configsList.stream().map(Pair::getFirst).toList();
+    }
+
     @Override
     public String get(String namespace) {
         StringBuilder sb = new StringBuilder();

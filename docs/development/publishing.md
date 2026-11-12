@@ -2,7 +2,7 @@
 
 ## Goal
 
-One source release, one exact 12-node publication plan, safe platform uploads, and one GitHub Release containing only installable matrix JARs.
+One source release, one exact matrix-derived publication plan, safe platform uploads, and one GitHub Release containing only installable matrix JARs.
 
 ## Source of Truth
 

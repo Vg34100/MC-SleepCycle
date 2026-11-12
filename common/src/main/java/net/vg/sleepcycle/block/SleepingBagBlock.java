@@ -52,8 +52,16 @@ public class SleepingBagBlock extends BedBlock implements EntityBlock {
     }
 
     @Override
+    //? if >=1.21 {
     public @NotNull InteractionResult useWithoutItem(BlockState blockState, Level level, BlockPos blockPos, Player player, BlockHitResult blockHitResult) {
+    //? } else {
+    /*public @NotNull InteractionResult use(BlockState blockState, Level level, BlockPos blockPos, Player player, InteractionHand hand, BlockHitResult blockHitResult) {
+    *///? }
+        //? if >=1.21 {
         if (level.isClientSide()) {
+        //? } else {
+        /*if (level.isClientSide) {
+        *///? }
             //? if >=26.1 {
             return InteractionResult.SUCCESS_SERVER;
             //? } else {
@@ -70,7 +78,11 @@ public class SleepingBagBlock extends BedBlock implements EntityBlock {
 
             //? if >=26.1 {
             BedRule bedRule = level.environmentAttributes().getValue(EnvironmentAttributes.BED_RULE, blockPos);
+            //? if >=26.3 {
+            /*if (bedRule.destroyOnUse()) {
+            *///? } else {
             if (bedRule.explodes()) {
+            //? }
             //? } else {
             /*if (!BedBlock.canSetSpawn(level)) {
             *///? }

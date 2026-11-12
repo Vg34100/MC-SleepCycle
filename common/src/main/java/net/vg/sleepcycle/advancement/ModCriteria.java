@@ -1,3 +1,4 @@
+//? if >=1.21 {
 package net.vg.sleepcycle.advancement;
 
 
@@ -25,3 +26,14 @@ public class ModCriteria {
         return SLEEP.get();
     }
 }
+//? } else {
+/*package net.vg.sleepcycle.advancement;
+
+import net.vg.sleepcycle.mixin.LegacyCriteriaInvoker;
+
+public final class ModCriteria {
+    private static final SleepCriterion SLEEP = new SleepCriterion();
+    public static void register() { LegacyCriteriaInvoker.sleepcycle$register(SLEEP); }
+    public static SleepCriterion getSleepCriterion() { return SLEEP; }
+}
+*///? }

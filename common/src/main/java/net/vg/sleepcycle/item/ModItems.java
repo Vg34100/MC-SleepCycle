@@ -32,32 +32,14 @@ public class ModItems {
         for (DyeColor color : DyeColor.values()) {
             String name = "sleeping_bag_" + color.getName();
             SLEEPING_BAGS.put(color, BLOCKS.register(name,
-                    () -> new SleepingBagBlock(color, BlockBehaviour.Properties.of()
-                            //? if >=26.1 {
-                            .setId(blockKey(name))
-                            //? }
+                    () -> new SleepingBagBlock(color, net.vg.sleepcycle.util.ModProperties.block(name)
                             .strength(0.2F)
                             .noOcclusion()
                             .dynamicShape())));
             SLEEPING_BAG_ITEMS.put(color, ITEMS.register(name,
-                    () -> new SleepingBagItem(SLEEPING_BAGS.get(color).get(), new Item.Properties()
-                            //? if >=26.1 {
-                            .setId(itemKey(name))
-                            //? }
+                    () -> new SleepingBagItem(SLEEPING_BAGS.get(color).get(), net.vg.sleepcycle.util.ModProperties.item(name)
                             .stacksTo(1))));
         }
-    }
-
-    private static Identifier id(String name) {
-        return Identifier.fromNamespaceAndPath(Constants.MOD_ID, name);
-    }
-
-    private static ResourceKey<Block> blockKey(String name) {
-        return ResourceKey.create(Registries.BLOCK, id(name));
-    }
-
-    private static ResourceKey<Item> itemKey(String name) {
-        return ResourceKey.create(Registries.ITEM, id(name));
     }
 
     public static void register() {

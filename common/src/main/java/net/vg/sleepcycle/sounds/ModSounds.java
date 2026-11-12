@@ -14,7 +14,7 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> TIRED_SOUND = registerSoundEvent("tired");
 
     private static RegistrySupplier<SoundEvent> registerSoundEvent(String name) {
-        Identifier id = Identifier.fromNamespaceAndPath(Constants.MOD_ID, name);
+        Identifier id = net.vg.sleepcycle.util.ModIds.id(name);
         return SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(id));
     }
 

@@ -18,6 +18,9 @@ tasks.named('processResources') {
         ['PlayerTickMixin', 'ServerPlayerSleepMixin'].each { name ->
             if (!mixins.mixins.remove(name)) throw new GradleException("Missing modern-only mixin: ${name}")
         }
+        if (stonecutter.eval(stonecutter.current.version, '<1.21')) {
+            mixins.mixins.addAll(['LegacyCriteriaInvoker', 'LegacyTiredMiningMixin'])
+        }
         mixinFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(mixins)) + '\n'
         if (fabricResources) {
             def file = new File(destinationDir, 'fabric.mod.json')
@@ -36,6 +39,58 @@ tasks.named('processResources') {
                 [(key): value.startsWith('#') ? [tag: value.substring(1)] : [item: value]]
             }
             file.text = JsonOutput.prettyPrint(JsonOutput.toJson(recipe)) + '\n'
+        }
+    }
+}
+
+// Pre-component Minecraft uses plural data directories and item-shaped icons/results.
+tasks.named('processResources') {
+    doLast {
+        if (!stonecutter.eval(stonecutter.current.version, '<1.21')) return
+        def root = destinationDir
+        fileTree(new File(root, 'data/sleepcycle/recipe')).matching { include '*.json' }.each { file ->
+            def json = new JsonSlurper().parse(file)
+            json.result.item = json.result.remove('id')
+            file.setText(JsonOutput.prettyPrint(JsonOutput.toJson(json)) + '\n', 'UTF-8')
+        }
+        fileTree(new File(root, 'data/sleepcycle/advancement')).matching { include '**/*.json' }.each { file ->
+            def json = new JsonSlurper().parse(file)
+            if (json.display?.icon?.id) {
+                json.display.icon.item = json.display.icon.remove('id')
+                json.display.icon.remove('count')
+            }
+            json.criteria?.values()?.each { criterion ->
+                criterion.conditions?.items?.each { predicate ->
+                    if (predicate.items instanceof String) {
+                        if (predicate.items.startsWith('#')) predicate.tag = predicate.remove('items').substring(1)
+                        else predicate.items = [predicate.items]
+                    }
+                }
+            }
+            file.setText(JsonOutput.prettyPrint(JsonOutput.toJson(json)) + '\n', 'UTF-8')
+        }
+        [recipe: 'recipes', advancement: 'advancements'].each { before, after ->
+            def dir = new File(root, 'data/sleepcycle/' + before)
+            if (!dir.renameTo(new File(root, 'data/sleepcycle/' + after))) throw new GradleException("Could not migrate ${dir}")
+        }
+        new File(root, 'pack.mcmeta').setText(JsonOutput.toJson([pack: [pack_format: 15, description: 'Sleep Cycle resources']]) + '\n', 'UTF-8')
+    }
+}
+
+// 26.3 RecipeUnlockedTrigger takes a recipe holder set rather than one ID.
+tasks.named('processResources') {
+    doLast {
+        if (!stonecutter.eval(stonecutter.current.version, '>=26.3')) return
+        fileTree(new File(destinationDir, 'data/sleepcycle/advancement')).matching { include '**/*.json' }.each { file ->
+            def json = new JsonSlurper().parse(file)
+            def changed = false
+            json.criteria?.values()?.each { criterion ->
+                if (criterion.trigger == 'minecraft:recipe_unlocked' && criterion.conditions?.recipe instanceof String) {
+                    criterion.conditions.recipes = [criterion.conditions.remove('recipe')]
+                    changed = true
+                }
+            }
+            if (changed) file.setText(JsonOutput.prettyPrint(JsonOutput.toJson(json)) + '\n', 'UTF-8')
         }
     }
 }

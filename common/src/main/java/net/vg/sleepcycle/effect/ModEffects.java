@@ -15,8 +15,8 @@ import net.vg.sleepcycle.Constants;
 public class ModEffects {
     private static final DeferredRegister<MobEffect> MOB_EFFECTS = DeferredRegister.create(Constants.MOD_ID, Registries.MOB_EFFECT);
 
-    public static final ResourceKey<MobEffect> WELL_RESTED_KEY = ResourceKey.create(Registries.MOB_EFFECT, Identifier.fromNamespaceAndPath(Constants.MOD_ID, "well_rested"));
-    public static final ResourceKey<MobEffect> TIRED_KEY = ResourceKey.create(Registries.MOB_EFFECT, Identifier.fromNamespaceAndPath(Constants.MOD_ID, "tired"));
+    public static final ResourceKey<MobEffect> WELL_RESTED_KEY = ResourceKey.create(Registries.MOB_EFFECT, net.vg.sleepcycle.util.ModIds.id("well_rested"));
+    public static final ResourceKey<MobEffect> TIRED_KEY = ResourceKey.create(Registries.MOB_EFFECT, net.vg.sleepcycle.util.ModIds.id("tired"));
 
     public static final RegistrySupplier<MobEffect> WELL_RESTED = MOB_EFFECTS.register(idPath(WELL_RESTED_KEY),
             () -> new WellRestedEffect(MobEffectCategory.BENEFICIAL, 13458603));
@@ -36,6 +36,7 @@ public class ModEffects {
         Constants.LOGGER.info("Registering Effects for " + Constants.MOD_ID);
     }
 
+    //? if >=1.21 {
     public static Holder<MobEffect> getWellRestedHolder() {
         //? if >=26.1 {
         return BuiltInRegistries.MOB_EFFECT.getOrThrow(WELL_RESTED_KEY);
@@ -51,4 +52,8 @@ public class ModEffects {
         /*return BuiltInRegistries.MOB_EFFECT.getHolderOrThrow(TIRED_KEY);
         *///? }
     }
+    //? } else {
+    /*public static MobEffect getWellRestedHolder() { return WELL_RESTED.get(); }
+    public static MobEffect getTiredHolder() { return TIRED.get(); }
+    *///? }
 }

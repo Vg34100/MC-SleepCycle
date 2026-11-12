@@ -4,21 +4,20 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.options.OptionsSubScreen;
 import net.minecraft.network.chat.Component;
 import net.vg.sleepcycle.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainOptionScreen extends OptionsSubScreen{
+public class MainOptionScreen extends SleepCycleOptionsScreen{
     private static final Component TITLE_TEXT = Component.translatable("config.general.title");
     private static final Component SERVER_SETTINGS_TEXT = Component.translatable("config.server.title");
     private static final Component CLIENT_SETTINGS_TEXT = Component.translatable("config.client.title");
     private static final Component EXPERIMENTAL_SETTINGS_TEXT = Component.translatable("config.experimental.title");
 
     public MainOptionScreen(Screen parent) {
-        super(parent, Minecraft.getInstance().options, TITLE_TEXT);
+        super(parent, TITLE_TEXT);
         Constants.LOGGER.debug("Initializing MainConfigScreen with title: {}", TITLE_TEXT.getString());
     }
 
@@ -59,7 +58,16 @@ public class MainOptionScreen extends OptionsSubScreen{
         clickableWidgets.add(experimentalSettingsButton);
 
         assert this.list != null;
+        //? if >=1.21 {
         this.list.addSmall(clickableWidgets);
+        //? } else {
+        /*serverSettingsButton.setPosition(this.width / 2 - 75, 50);
+        clientSettingsButton.setPosition(this.width / 2 - 75, 75);
+        experimentalSettingsButton.setPosition(this.width / 2 - 75, 100);
+        this.addRenderableWidget(serverSettingsButton);
+        this.addRenderableWidget(clientSettingsButton);
+        this.addRenderableWidget(experimentalSettingsButton);
+        *///? }
         Constants.LOGGER.debug("Added {} clickable widgets", clickableWidgets.size());
     }
 

@@ -15,7 +15,7 @@ Useful instructions retained from the previous repository guidance:
 - Keep loader-native initialization under its loader. Gate NeoForge's config UI
   to the client distribution; shared initialization must survive dedicated servers.
 - Use `build-smart.py` for Gradle work. Windows builds can run it through
-  `cmd.exe /d /c "python -u build-smart.py ..."`; Linux builds need native Java 21
+  `cmd.exe /d /c "python -u build-smart.py ..."`; Linux builds need native Java 17, 21
   and Java 25 toolchains. Avoid mixing native and Windows cache/toolchain paths.
   Keep local JDK paths out of tracked project properties; use wrapper discovery,
   `BUILD_SMART_JAVA_HOME`, or Gradle's toolchain settings.
