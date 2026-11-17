@@ -18,6 +18,7 @@ MOD_VERSION=System.getProperty("config.version"); }''',
     'net/vg/sleepcycle/SleepCycle.java': 'package net.vg.sleepcycle; public class SleepCycle {}',
     'org/apache/logging/log4j/Logger.java': '''package org.apache.logging.log4j;
 public class Logger { public void info(Object s) {} public void warn(Object s) {}
+public void info(String s, Object... a) {} public void warn(String s, Object... a) {}
 public void error(Object s) {} public void trace(Object s) {} }''',
     'org/apache/logging/log4j/LogManager.java': '''package org.apache.logging.log4j;
 public class LogManager { public static Logger getLogger(String s) { return new Logger(); } }''',
@@ -38,7 +39,9 @@ public class ConfigRoundTrip {
     public static void main(String[] args) throws Exception {
         boolean current=args[0].equals("current");
         ModConfigs.registerConfigs();
-        Path file=Path.of(System.getProperty("config.folder"),"sleepcycleconfig-"+System.getProperty("config.version")+".properties");
+        // Releases before 1.0.7 used a versioned filename; current code uses a stable one.
+        Path file=Path.of(System.getProperty("config.folder"),current ? "sleepcycleconfig.properties"
+            : "sleepcycleconfig-"+System.getProperty("config.version")+".properties");
         String defaults=Files.readString(file);
         check(entries(defaults).size()==13,"Default key count changed");
         Files.writeString(file.resolveSibling("defaults.txt"),defaults);
@@ -66,7 +69,25 @@ public class ConfigRoundTrip {
             check(entries(saved).get("unknown.future.key").equals("keep=everything"),"Filling gap discarded unknown key");
         }
         try(var files=Files.list(file.getParent())) { check(files.filter(p->p.toString().endsWith(".properties")).count()==1,"Filename changed"); }
-        System.out.println("PASS "+args[0]+" "+file.getFileName()+": defaults, custom values, unknown keys, comments, save/reload"+(current?", UTF-8, missing-key merge":""));
+        if(current) {
+            // Update from a versioned release: the newest old file (numeric order) is carried over once.
+            Path migrate=file.getParent().resolveSibling(file.getParent().getFileName()+"-migrate");
+            Files.createDirectories(migrate);
+            System.setProperty("config.folder", migrate.toString());
+            String older=defaults.replace("sleep.tired.wait=350","sleep.tired.wait=401");
+            String newer=defaults.replace("sleep.tired.wait=350","sleep.tired.wait=402")+"\n# carried comment\n";
+            Files.writeString(migrate.resolve("sleepcycleconfig-1.0.3.properties"),older);
+            Files.writeString(migrate.resolve("sleepcycleconfig-1.0.10.properties"),newer);
+            ModConfigs.registerConfigs();
+            check(ModConfigs.TIRED_WAIT==402,"Newest versioned settings not carried over");
+            check(Files.readString(migrate.resolve("sleepcycleconfig.properties")).contains("# carried comment"),"Carried file lost content");
+            check(Files.readString(migrate.resolve("sleepcycleconfig-1.0.3.properties")).equals(older)
+                && Files.readString(migrate.resolve("sleepcycleconfig-1.0.10.properties")).equals(newer),"Old versioned files modified");
+            Files.writeString(migrate.resolve("sleepcycleconfig-1.0.11.properties"),older);
+            ModConfigs.registerConfigs();
+            check(ModConfigs.TIRED_WAIT==402,"Stable file was replaced by a later versioned file");
+        }
+        System.out.println("PASS "+args[0]+" "+file.getFileName()+": defaults, custom values, unknown keys, comments, save/reload"+(current?", UTF-8, missing-key merge, versioned-file carry-over":""));
     }
 }'''
 
@@ -102,7 +123,7 @@ def main():
         before = (work / 'baseline' / version / 'defaults.txt').read_text(encoding='utf-8')
         after = (work / 'current' / version / 'defaults.txt').read_text(encoding='utf-8')
         assert before == after, 'Provider default values/comments changed'
-    print('CONFIG COMPATIBILITY PASS: historical/current filenames; original defaults/comments unchanged')
+    print('CONFIG COMPATIBILITY PASS: versioned (baseline) and stable (current) filenames; original defaults/comments unchanged')
 
 
 if __name__ == '__main__':

@@ -30,8 +30,10 @@ unused legacy assets are not activated by the conversion.
 
 Sleep duration/wake targets and world bookkeeping are transient maps. Effects,
 statistics, advancements and sleeping-bag block entities use vanilla saved data.
-The config filename stays `sleepcycleconfig-1.0.4.properties`, with the same keys
-and defaults. The network payload stays `sleepcycle:wake_at`, carrying a VAR_LONG
+The config filename was `sleepcycleconfig-<version>.properties` through 1.0.6, which
+reset settings on every update. It is now the stable `sleepcycleconfig.properties`;
+on first start the newest versioned file is copied over once (old files untouched).
+Keys and defaults are unchanged. The network payload stays `sleepcycle:wake_at`, carrying a VAR_LONG
 and handling the wake target on the server thread. Configuration screens edit
 local config; there is no existing server-config synchronization protocol.
 

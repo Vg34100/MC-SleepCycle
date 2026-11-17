@@ -30,7 +30,9 @@ See the [1.0.6 release notes](docs/wiki/release-notes.md).
   without setting a respawn point.
 - Multiplayer sleeping-percentage control and server handling of wake requests.
 
-The config file is `config/sleepcycleconfig-1.0.6.properties`. Config screens edit
+The config file is `config/sleepcycleconfig.properties`. Releases up to 1.0.6 used a
+versioned name (`sleepcycleconfig-<version>.properties`); the newest such file is
+copied over once on first start and left in place. Config screens edit
 local values; server configuration is not automatically synchronized to clients.
 
 ## Development and validation
