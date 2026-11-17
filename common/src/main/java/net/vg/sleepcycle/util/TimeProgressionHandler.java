@@ -51,7 +51,12 @@ public class TimeProgressionHandler {
         worldSleepTicks.putIfAbsent(world, 0);
     }
 
+    /**
+     * Server side of the {@code wake_at} packet. The client's wake buttons only send times within
+     * one day while the player is in bed; anything else is ignored.
+     */
     public static void setWakeTarget(ServerPlayer player, long targetDayTime) {
+        if (targetDayTime < 0 || targetDayTime >= 24000 || !player.isSleeping()) return;
         long totalTicks = dayTicks(player.level());
         long currentDayTime = totalTicks % 24000;
         long ticksUntilTarget = (targetDayTime - currentDayTime + 24000) % 24000;

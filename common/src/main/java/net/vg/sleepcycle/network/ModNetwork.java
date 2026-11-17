@@ -37,9 +37,11 @@ public class ModNetwork {
     // Called only by the physical-client sleep screen.
     public static void sendWakeTarget(long target) {
         //? if >=1.21 {
+        if (!NetworkManager.canServerReceive(WakeAtPacket.TYPE)) return;
         NetworkManager.sendToServer(new WakeAtPacket(target));
         //? } else {
-        /*var buffer = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+        /*if (!NetworkManager.canServerReceive(net.vg.sleepcycle.util.ModIds.id("wake_at"))) return;
+        var buffer = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
         try {
             buffer.writeVarLong(target);
             NetworkManager.sendToServer(net.vg.sleepcycle.util.ModIds.id("wake_at"), buffer);
